@@ -197,3 +197,28 @@ export async function getInternationalInvestmentData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+/**
+ * Get foreign control data for Page 32
+ * Returns array of objects: { year, utilities, oil_gas, all_non_financial }
+ * Values are percentages
+ */
+export async function getForeignControlData() {
+    const allData = await loadAllData();
+    
+    // Filter for page32 vectors
+    const page32Data = allData.filter(row => row.vector && row.vector.startsWith('page32_'));
+    
+    // Group by year
+    const yearMap = {};
+    page32Data.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('page32_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

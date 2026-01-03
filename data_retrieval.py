@@ -528,6 +528,86 @@ def process_page31_data():
 
 
 # =============================================================================
+# PAGE 32: FOREIGN CONTROL OF CANADIAN ASSETS (Table 33-10-0570-01)
+# =============================================================================
+
+def get_foreign_control_url():
+    """Get foreign control URL (Table 33-10-0570-01).
+    
+    Returns percentage of total assets under foreign control for:
+    - Total non-financial industries
+    - Oil and gas extraction and support activities [211, 213]
+    - Utilities [22]
+    """
+    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3310057001&latestN=0&startDate=20100101&endDate=20301212&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B3%2C9%2C11%5D%2C%5B2%5D%2C%5B2%5D%5D&checkedLevels=0D1"
+
+
+def process_page32_data():
+    """
+    Fetch foreign control data from StatCan and process for Page 32.
+    
+    Returns percentage of total assets under foreign control for different industries.
+    
+    Returns list of tuples for data.csv and metadata.csv
+    """
+    print("Processing Page 32: Foreign Control of Canadian Assets...")
+    
+    df = fetch_csv_from_url(get_foreign_control_url())
+    
+    print(f"  Total rows fetched: {len(df)}")
+    
+    # Column names
+    naics_col = 'North American Industry Classification System (NAICS)'
+    
+    # Print unique industry names for debugging
+    unique_industries = df[naics_col].unique().tolist()
+    print(f"  Found {len(unique_industries)} unique industries:")
+    for ind in unique_industries:
+        print(f"    - {ind}")
+    
+    # Map industries to keys
+    industry_mapping = {
+        'Total non-financial industries (excluding management of companies and enterprises)': 'all_non_financial',
+        'Oil and gas extraction and support activities [211, 213]': 'oil_gas',
+        'Utilities [22]': 'utilities'
+    }
+    
+    # Convert year
+    df['year'] = pd.to_numeric(df['REF_DATE'], errors='coerce')
+    
+    # Filter for years 2010 onwards
+    df = df[df['year'] >= 2010].copy()
+    
+    years = sorted(df['year'].dropna().unique())
+    data_rows = []
+    
+    for year in years:
+        year_df = df[df['year'] == year]
+        year_int = int(year)
+        
+        for industry_name, key in industry_mapping.items():
+            industry_row = year_df[year_df[naics_col] == industry_name]
+            if not industry_row.empty:
+                value = industry_row['VALUE'].values[0]
+                if pd.notna(value):
+                    data_rows.append((f'page32_{key}', year_int, round(value, 1)))
+        
+        # Debug print for first and last years
+        if year_int == 2010 or year_int == max(years):
+            print(f"    {year_int}: Data processed")
+    
+    # Metadata
+    metadata_rows = [
+        ('page32_utilities', 'Utilities - Percentage of total assets under foreign control', 'Percent', 'units'),
+        ('page32_oil_gas', 'Oil and gas extraction and support activities - Percentage of total assets under foreign control', 'Percent', 'units'),
+        ('page32_all_non_financial', 'Total non-financial industries - Percentage of total assets under foreign control', 'Percent', 'units'),
+    ]
+    
+    print(f"  Page 32: {len(data_rows)} data rows")
+    return data_rows, metadata_rows
+
+
+# =============================================================================
 # MAIN FUNCTION
 # =============================================================================
 
@@ -560,6 +640,10 @@ def refresh_all_data():
     data31, meta31 = process_page31_data()
     all_data.extend(data31)
     all_metadata.extend(meta31)
+    
+    data32, meta32 = process_page32_data()
+    all_data.extend(data32)
+    all_metadata.extend(meta32)
     
     # Create DataFrames
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])
