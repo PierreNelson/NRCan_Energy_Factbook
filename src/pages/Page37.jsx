@@ -508,6 +508,12 @@ const accessibleStrings = getAccessibleStrings();
                     font-size: 1.1rem;
                     margin-bottom: 10px;
                     line-height: 1.5;
+
+                }
+
+                .page37-subtitle:focus {
+                    outline: none;
+
                 }
 
                 .page37-text {
@@ -516,6 +522,10 @@ const accessibleStrings = getAccessibleStrings();
                     font-size: 1.1rem;
                     margin-bottom: 15px;
                     line-height: 1.5;
+                }
+
+                .page37-text:focus {
+                    outline: none;
                 }
 
                 .page37-content-row {
@@ -750,7 +760,6 @@ const accessibleStrings = getAccessibleStrings();
                 </header>
 
                 {/* Year Slider */}
-                {/* Year Slider - Fixed: Removed role="region" to prevent "box" focus */}
                 <div 
                     className="page37-slider-region"
                     role="region" 

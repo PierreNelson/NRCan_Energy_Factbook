@@ -41,7 +41,8 @@ const Layout = () => {
 
     // Footer Navigation Logic
     const pages = [
-        { path: '/', labelKey: 'nav_section2_title' },
+        { path: '/', labelKey: 'nav_section1_title' },
+        { path: '/page-23', labelKey: 'nav_section2_title' },
         { path: '/page-24', labelKey: 'nav_capital_expenditure' },
         { path: '/page-25', labelKey: 'nav_infrastructure' },
         { path: '/page-26', labelKey: 'nav_economic_contributions' },

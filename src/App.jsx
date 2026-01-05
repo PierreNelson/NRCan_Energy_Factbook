@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 
 // Lazy load pages for code splitting
 // These files are NOT downloaded initially - only when user navigates to them
+const Page1 = React.lazy(() => import('./pages/Page1'));
 const Page23 = React.lazy(() => import('./pages/Page23'));
 const Page24 = React.lazy(() => import('./pages/Page24'));
 const Page25 = React.lazy(() => import('./pages/Page25'));
@@ -55,6 +56,16 @@ function App() {
         <Route path="/" element={<Layout />}>
           {/* Wrap routes in Suspense for lazy loading */}
           <Route index element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <Page1 />
+            </Suspense>
+          } />
+          <Route path="page-1" element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <Page1 />
+            </Suspense>
+          } />
+          <Route path="page-23" element={
             <Suspense fallback={<LoadingSpinner />}>
               <Page23 />
             </Suspense>

@@ -1,29 +1,26 @@
 import React, { useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
-// Import data loader to prefetch and warm up cache
-import { getCapitalExpendituresData, getInfrastructureData, getEconomicContributionsData } from '../utils/dataLoader';
-import page23Image from '../assets/page23_bg.jpg';
+import page1Image from '../assets/page1_bg.jpg';
 
-const Page23 = () => {
+const Page1 = () => {
     const { lang } = useOutletContext();
 
     // Prefetch data and code in the background while user views this page
     useEffect(() => {
-        getCapitalExpendituresData();
-        getInfrastructureData();
-        getEconomicContributionsData();
-        import('./Page24');
+        // Prefetch next pages in Section 1 when they are added
+        // For now, just prefetch Section 2 intro
+        import('./Page23');
     }, []);
 
     // Build screen reader text for the title
     const getTitleText = () => {
-        return `${getText('page23_section', lang)} ${getText('page23_title', lang)}`;
+        return `${getText('page1_section', lang)} ${getText('page1_title', lang)}`;
     };
 
     // Build screen reader text for the list items
     const getListItemsText = () => {
-        const items = [1, 2, 3, 4, 5, 6].map(num => getText(`page23_item${num}`, lang));
+        const items = [1, 2, 3].map(num => getText(`page1_item${num}`, lang));
         const prefix = lang === 'en' ? 'This section covers:' : 'Cette section couvre:';
         return `${prefix} ${items.join('. ')}.`;
     };
@@ -32,22 +29,23 @@ const Page23 = () => {
         <main 
             id="main-content"
             tabIndex="-1"
-            className="page-content page-23 page23-main" 
+            className="page-content page-1 page1-main" 
             role="main"
             aria-label={getTitleText()}
             style={{
-                backgroundColor: '#8a7d5a',
+                backgroundColor: '#5a7a8a',
                 flex: '1 1 auto',
                 display: 'flex',
                 flexDirection: 'column',
             }}
         >
             <style>{`
-.page23-main {
+                /* Base Styles (100% Zoom) */
+.page1-main {
     overflow: visible;
 }
 
-.page23-container {
+.page1-container {
     width: 100%;
     min-height: 0;
     display: flex;
@@ -55,17 +53,18 @@ const Page23 = () => {
     flex: 1;
 }
 
-.page23-image-title-wrapper {
+.page1-image-title-wrapper {
     position: relative;
     width: 100%;
-    min-height: 320px; 
+    /* Base height for 100% zoom */
+    min-height: 500px; 
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
 }
 
-.page23-image {
+.page1-image {
     position: absolute;
     top: 0;
     left: 0;
@@ -74,14 +73,14 @@ const Page23 = () => {
     z-index: 0;
 }
 
-.page23-image img {
+.page1-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: 50% 65%;
 }
 
-.page23-title {
+.page1-title {
     position: relative;
     z-index: 1;
     width: 100%;
@@ -90,173 +89,177 @@ const Page23 = () => {
     box-sizing: border-box;
 }
 
-.page23-title-box {
+.page1-title-box {
     background-color: rgba(255, 255, 255, 0.7); 
     padding: 20px 40px;
     width: 100%;
     box-sizing: border-box;
 }
 
-.page23-list {
+.page1-list {
     width: 100%;
-    background-color: #8a7d5a;
+    background-color: #5a7a8a;
     padding: 30px 40px;
     box-sizing: border-box;
     flex: 1;
 }
 
-.page23-title-text {
+/* Initial large font sizes */
+.page1-title-text {
     font-family: Georgia, "Times New Roman", serif;
-    font-size: 4.5rem;
+    font-size: 4.5rem; 
     color: #221e1f;
     display: block;
     line-height: 1.15;
     text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
 }
 
-.page23-list-item {
+.page1-list-item {
     margin-bottom: 8px;
-    font-size: 2.2rem;
+    font-size: 2.2rem; 
 }
+
+/* --- ZOOM LEVEL MEDIA QUERIES --- */
 
 /* 110% Zoom (~1745px) */
 @media (max-width: 1745px) {
-    .page23-image-title-wrapper {
-        min-height: 310px;
+    .page1-image-title-wrapper {
+        min-height: 480px; /* Slightly reduced height */
     }
-    .page23-title-text {
+    .page1-title-text {
         font-size: 4.2rem;
     }
-    .page23-list-item {
+    .page1-list-item {
         font-size: 2.1rem;
     }
 }
 
 /* 125% Zoom (~1536px) */
 @media (max-width: 1536px) {
-    .page23-image-title-wrapper {
-        min-height: 300px;
+    .page1-image-title-wrapper {
+        min-height: 450px;
     }
-    .page23-title-text {
+    .page1-title-text {
         font-size: 4.0rem;
     }
-    .page23-list-item {
-        font-size: 2.0rem;
+    .page1-list-item {
+        font-size: 2.0rem; /* Kept large */
     }
 }
 
 /* 150% Zoom (~1280px) */
 @media (max-width: 1280px) {
-    .page23-image-title-wrapper {
-        min-height: 280px;
+    .page1-image-title-wrapper {
+        min-height: 420px;
     }
-    .page23-title-text {
+    .page1-title-text {
         font-size: 3.8rem;
     }
-    .page23-list-item {
+    .page1-list-item {
         font-size: 1.9rem;
     }
 }
 
 /* 175% Zoom (~1100px) */
 @media (max-width: 1100px) {
-    .page23-image-title-wrapper {
-        min-height: 260px;
+    .page1-image-title-wrapper {
+        min-height: 380px;
     }
-    .page23-title-text {
+    .page1-title-text {
         font-size: 3.5rem;
     }
-    .page23-list-item {
+    .page1-list-item {
         font-size: 1.8rem;
     }
 }
 
 /* 200% Zoom (~960px) */
 @media (max-width: 960px) {
-    .page23-image-title-wrapper {
-        min-height: 240px;
+    .page1-image-title-wrapper {
+        min-height: 350px; /* Significantly reduced to fit viewport */
     }
-    .page23-title-text {
+    .page1-title-text {
         font-size: 3.2rem;
     }
-    .page23-list-item {
+    .page1-list-item {
         font-size: 1.7rem;
     }
-    .page23-title-box, .page23-list {
+    .page1-title-box, .page1-list {
         padding: 20px 30px;
     }
 }
 
 /* 300% Zoom (~640px) */
 @media (max-width: 640px) {
-    .page23-image-title-wrapper {
-        min-height: 200px;
+    .page1-image-title-wrapper {
+        min-height: 300px;
     }
-    .page23-title-text {
-        font-size: 2.5rem;
+    .page1-title-text {
+        font-size: 2.5rem; /* adjusted to fit width */
     }
-    .page23-list-item {
+    .page1-list-item {
         font-size: 1.5rem;
     }
-    .page23-title-box, .page23-list {
+    .page1-title-box, .page1-list {
         padding: 15px 20px;
     }
 }
 
 /* 400% Zoom (~480px) */
 @media (max-width: 480px) {
-    .page23-image-title-wrapper {
-        min-height: 180px;
+    .page1-image-title-wrapper {
+        min-height: 250px; /* Short enough to leave room for text */
     }
-    .page23-title-text {
-        font-size: 2.0rem;
+    .page1-title-text {
+        font-size: 2.0rem; 
     }
-    .page23-list-item {
-        font-size: 1.3rem;
+    .page1-list-item {
+        font-size: 1.3rem; /* robust accessible size */
     }
 }
 
 /* 500% Zoom (~384px) */
 @media (max-width: 384px) {
-    .page23-image-title-wrapper {
-        min-height: 160px;
+    .page1-image-title-wrapper {
+        min-height: 220px;
     }
-    .page23-title-text {
+    .page1-title-text {
         font-size: 1.8rem;
     }
-    .page23-list-item {
+    .page1-list-item {
         font-size: 1.2rem;
     }
-    .page23-container {
-        min-height: 100vh;
+    /* Ensure no extra margin creates whitespace */
+    .page1-container {
+        min-height: 100vh; 
     }
 }
             `}</style>
 
-            <div className="page23-container">
+            <div className="page1-container">
                 {/* Image and Title Wrapper */}
-                <div className="page23-image-title-wrapper">
-                    {/* Background Image - Windmills */}
-                    <div className="page23-image" aria-hidden="true">
+                <div className="page1-image-title-wrapper">
+                    {/* Background Image */}
+                    <div className="page1-image" aria-hidden="true">
                         <img
-                            src={page23Image}
+                            src={page1Image}
                             alt=""
                         />
                     </div>
 
                     {/* REGION 1: Title */}
                     <header 
-                        className="page23-title"
+                        className="page1-title"
                         role="region"
                         aria-label={getTitleText()}
                     >
-                        <div className="page23-title-box">
+                        <div className="page1-title-box">
                             <h1 aria-hidden="true" style={{ margin: 0 }}>
-                                <span className="page23-title-text" style={{ fontWeight: 'normal' }}>
-                                    {getText('page23_section', lang)}
+                                <span className="page1-title-text" style={{ fontWeight: 'normal' }}>
+                                    {getText('page1_section', lang)}
                                 </span>
-                                <span className="page23-title-text" style={{ fontWeight: 'bold', lineHeight: '1.1' }}>
-                                    {getText('page23_title', lang)}
+                                <span className="page1-title-text" style={{ fontWeight: 'bold', lineHeight: '1.1' }}>
+                                    {getText('page1_title', lang)}
                                 </span>
                             </h1>
                         </div>
@@ -265,7 +268,7 @@ const Page23 = () => {
 
                 {/* REGION 2: Section Contents */}
                 <nav 
-                    className="page23-list"
+                    className="page1-list"
                     role="region"
                     aria-label={getListItemsText()}
                 >
@@ -276,9 +279,9 @@ const Page23 = () => {
                         color: '#ebe8e1',
                         fontFamily: 'Arial, sans-serif'
                     }}>
-                        {[1, 2, 3, 4, 5, 6].map(num => (
-                            <li key={num} className="page23-list-item">
-                                {getText(`page23_item${num}`, lang)}
+                        {[1, 2, 3].map(num => (
+                            <li key={num} className="page1-list-item">
+                                {getText(`page1_item${num}`, lang)}
                             </li>
                         ))}
                     </ul>
@@ -288,4 +291,5 @@ const Page23 = () => {
     );
 };
 
-export default Page23;
+export default Page1;
+
