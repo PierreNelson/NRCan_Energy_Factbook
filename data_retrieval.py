@@ -531,6 +531,25 @@ def process_page31_data():
 # PAGE 32: FOREIGN CONTROL OF CANADIAN ASSETS (Table 33-10-0570-01)
 # =============================================================================
 
+def get_environmental_protection_url():
+    """Get environmental protection expenditures URL (Table 38-10-0130-01).
+    
+    Returns data for:
+    - Oil and gas extraction [211]
+    - Electric power generation [2211]
+    - Petroleum and coal product manufacturing [324]
+    - Total industries
+    
+    Environmental activities:
+    - Total, environmental protection activities
+    - Solid waste management
+    - Wastewater management
+    - Air pollution management
+    - Protection and remediation of soil, groundwater and surface water
+    - Other environmental protection activities
+    """
+    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3810013001&latestN=0&startDate=20070101&endDate=20301212&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B3%2C5%2C6%2C11%5D%2C%5B12%2C13%2C14%2C15%5D%5D&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C3D2"
+
 def get_foreign_control_url():
     """Get foreign control URL (Table 33-10-0570-01).
     
@@ -608,6 +627,157 @@ def process_page32_data():
 
 
 # =============================================================================
+# PAGE 37: ENVIRONMENTAL PROTECTION EXPENDITURES
+# =============================================================================
+
+def process_page37_data():
+    """Process environmental protection expenditures data (Table 38-10-0130-01).
+    
+    Creates virtual vectors:
+    - page37_oil_gas_total: Oil and gas extraction total expenditures
+    - page37_oil_gas_wastewater: Oil and gas - Wastewater management
+    - page37_oil_gas_soil: Oil and gas - Protection and remediation of soil, groundwater and surface water
+    - page37_oil_gas_air: Oil and gas - Air pollution management
+    - page37_oil_gas_solid_waste: Oil and gas - Solid waste management
+    - page37_oil_gas_other: Oil and gas - Other environmental protection activities
+    - page37_electric_total: Electric power generation total expenditures
+    - page37_petroleum_total: Petroleum and coal product manufacturing total expenditures
+    - page37_all_industries_total: Total industries total expenditures
+    """
+    print("\nProcessing Page 37 data (Environmental Protection Expenditures)...")
+    
+    url = get_environmental_protection_url()
+    response = requests.get(url)
+    response.raise_for_status()
+    
+    df = pd.read_csv(io.StringIO(response.text))
+    print(f"  Downloaded {len(df)} rows from StatCan")
+    
+    # Filter for Total expenditures only
+    df = df[df['Expenditures'] == 'Total, expenditures'].copy()
+    
+    # Extract year from REF_DATE (format is just "2018", "2019", etc.)
+    df['year'] = df['REF_DATE'].astype(int)
+    
+    # Define main activity categories (shown individually in the pie chart)
+    main_activities = {
+        'wastewater': 'Wastewater management',
+        'soil': 'Protection and remediation of soil, groundwater and surface water',
+        'air': 'Air pollution management',
+        'solid_waste': 'Solid waste management',
+        'total': 'Total, environmental protection activities'
+    }
+    
+    # Categories to sum into "Other" (as per the factbook)
+    # Excludes: Noise and vibration abatement, Protection against radiation, Clean vehicles and transportation technologies
+    other_activities = [
+        'Protection of biodiversity and habitat',
+        'Environmental charges',
+        'Other environmental protection activities'
+    ]
+    
+    # Define industries
+    industries = {
+        'oil_gas': 'Oil and gas extraction [211]',
+        'electric': 'Electric power generation, transmission and distribution [2211]',
+        'natural_gas': 'Natural gas distribution [2212]',
+        'petroleum': 'Petroleum and coal product manufacturing [324]',
+        'all_industries': 'Total, industries'
+    }
+    
+    data_rows = []
+    
+    # Process each year
+    for year in df['year'].unique():
+        year_df = df[df['year'] == year]
+        
+        # Oil and gas extraction - main activities
+        for act_key, act_name in main_activities.items():
+            oil_gas_df = year_df[(year_df['Industries'] == industries['oil_gas']) & 
+                                  (year_df['Environmental protection activities'] == act_name)]
+            if len(oil_gas_df) > 0:
+                value = oil_gas_df['VALUE'].values[0]
+                if pd.notna(value):
+                    data_rows.append((f'page37_oil_gas_{act_key}', year, float(value)))
+        
+        # Oil and gas extraction - sum "other" categories
+        other_sum = 0
+        for other_act in other_activities:
+            oil_gas_other_df = year_df[(year_df['Industries'] == industries['oil_gas']) & 
+                                        (year_df['Environmental protection activities'] == other_act)]
+            if len(oil_gas_other_df) > 0:
+                value = oil_gas_other_df['VALUE'].values[0]
+                if pd.notna(value):
+                    other_sum += float(value)
+        if other_sum > 0:
+            data_rows.append(('page37_oil_gas_other', year, other_sum))
+        
+        # Electric power generation - total only
+        electric_df = year_df[(year_df['Industries'] == industries['electric']) & 
+                               (year_df['Environmental protection activities'] == main_activities['total'])]
+        if len(electric_df) > 0:
+            value = electric_df['VALUE'].values[0]
+            if pd.notna(value):
+                data_rows.append(('page37_electric_total', year, float(value)))
+        
+        # Natural gas distribution - total only
+        natural_gas_df = year_df[(year_df['Industries'] == industries['natural_gas']) & 
+                                  (year_df['Environmental protection activities'] == main_activities['total'])]
+        if len(natural_gas_df) > 0:
+            value = natural_gas_df['VALUE'].values[0]
+            if pd.notna(value):
+                data_rows.append(('page37_natural_gas_total', year, float(value)))
+        
+        # Petroleum and coal products - total only
+        petroleum_df = year_df[(year_df['Industries'] == industries['petroleum']) & 
+                                (year_df['Environmental protection activities'] == main_activities['total'])]
+        if len(petroleum_df) > 0:
+            value = petroleum_df['VALUE'].values[0]
+            if pd.notna(value):
+                data_rows.append(('page37_petroleum_total', year, float(value)))
+        
+        # Petroleum and coal products - pollution abatement categories (air + wastewater + solid waste + soil)
+        # These sum to the "pollution abatement and control" percentage in the factbook
+        pollution_categories = ['air', 'wastewater', 'solid_waste', 'soil']
+        pollution_sum = 0
+        for cat in pollution_categories:
+            petroleum_cat_df = year_df[(year_df['Industries'] == industries['petroleum']) & 
+                                        (year_df['Environmental protection activities'] == main_activities[cat])]
+            if len(petroleum_cat_df) > 0:
+                value = petroleum_cat_df['VALUE'].values[0]
+                if pd.notna(value):
+                    pollution_sum += float(value)
+        if pollution_sum > 0:
+            data_rows.append(('page37_petroleum_pollution', year, pollution_sum))
+        
+        # All industries - total only
+        all_ind_df = year_df[(year_df['Industries'] == industries['all_industries']) & 
+                              (year_df['Environmental protection activities'] == main_activities['total'])]
+        if len(all_ind_df) > 0:
+            value = all_ind_df['VALUE'].values[0]
+            if pd.notna(value):
+                data_rows.append(('page37_all_industries_total', year, float(value)))
+    
+    # Create metadata rows
+    metadata_rows = [
+        ('page37_oil_gas_total', 'Oil and gas extraction - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('page37_oil_gas_wastewater', 'Oil and gas extraction - Wastewater management', 'Millions of dollars', 'millions'),
+        ('page37_oil_gas_soil', 'Oil and gas extraction - Protection and remediation of soil, groundwater and surface water', 'Millions of dollars', 'millions'),
+        ('page37_oil_gas_air', 'Oil and gas extraction - Air pollution management', 'Millions of dollars', 'millions'),
+        ('page37_oil_gas_solid_waste', 'Oil and gas extraction - Solid waste management', 'Millions of dollars', 'millions'),
+        ('page37_oil_gas_other', 'Oil and gas extraction - Other environmental protection activities', 'Millions of dollars', 'millions'),
+        ('page37_electric_total', 'Electric power generation - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('page37_natural_gas_total', 'Natural gas distribution - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('page37_petroleum_total', 'Petroleum and coal product manufacturing - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('page37_petroleum_pollution', 'Petroleum and coal product manufacturing - Pollution abatement and control', 'Millions of dollars', 'millions'),
+        ('page37_all_industries_total', 'Total industries - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+    ]
+    
+    print(f"  Page 37: {len(data_rows)} data rows")
+    return data_rows, metadata_rows
+
+
+# =============================================================================
 # MAIN FUNCTION
 # =============================================================================
 
@@ -644,6 +814,10 @@ def refresh_all_data():
     data32, meta32 = process_page32_data()
     all_data.extend(data32)
     all_metadata.extend(meta32)
+    
+    data37, meta37 = process_page37_data()
+    all_data.extend(data37)
+    all_metadata.extend(meta37)
     
     # Create DataFrames
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])

@@ -27,3 +27,14 @@ page31_fdi,Foreign direct investment in Canada (FDI) - Energy industry,Millions 
 page32_utilities,Utilities - Percentage of total assets under foreign control,Percent,units
 page32_oil_gas,Oil and gas extraction and support activities - Percentage of total assets under foreign control,Percent,units
 page32_all_non_financial,Total non-financial industries - Percentage of total assets under foreign control,Percent,units
+page37_oil_gas_total,Oil and gas extraction - Total environmental protection expenditures,Millions of dollars,millions
+page37_oil_gas_wastewater,Oil and gas extraction - Wastewater management,Millions of dollars,millions
+page37_oil_gas_soil,"Oil and gas extraction - Protection and remediation of soil, groundwater and surface water",Millions of dollars,millions
+page37_oil_gas_air,Oil and gas extraction - Air pollution management,Millions of dollars,millions
+page37_oil_gas_solid_waste,Oil and gas extraction - Solid waste management,Millions of dollars,millions
+page37_oil_gas_other,Oil and gas extraction - Other environmental protection activities,Millions of dollars,millions
+page37_electric_total,Electric power generation - Total environmental protection expenditures,Millions of dollars,millions
+page37_natural_gas_total,Natural gas distribution - Total environmental protection expenditures,Millions of dollars,millions
+page37_petroleum_total,Petroleum and coal product manufacturing - Total environmental protection expenditures,Millions of dollars,millions
+page37_petroleum_pollution,Petroleum and coal product manufacturing - Pollution abatement and control,Millions of dollars,millions
+page37_all_industries_total,Total industries - Total environmental protection expenditures,Millions of dollars,millions

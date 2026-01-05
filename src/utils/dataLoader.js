@@ -222,3 +222,32 @@ export async function getForeignControlData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+/**
+ * Get environmental protection expenditures data for Page 37
+ * Returns array of objects: { 
+ *   year, 
+ *   oil_gas_total, oil_gas_wastewater, oil_gas_soil, oil_gas_air, oil_gas_solid_waste, oil_gas_other,
+ *   electric_total, petroleum_total, all_industries_total 
+ * }
+ * Values are in millions of dollars
+ */
+export async function getEnvironmentalProtectionData() {
+    const allData = await loadAllData();
+    
+    // Filter for page37 vectors
+    const page37Data = allData.filter(row => row.vector && row.vector.startsWith('page37_'));
+    
+    // Group by year
+    const yearMap = {};
+    page37Data.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('page37_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

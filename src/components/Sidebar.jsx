@@ -107,6 +107,14 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('nav_fdi_stock', lang)}
                             </NavLink>
+
+                            {/* Page 37 */}
+                            <NavLink
+                                to="/page-37"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_environmental_protection', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>

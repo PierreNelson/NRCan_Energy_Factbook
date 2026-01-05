@@ -47,7 +47,8 @@ const Layout = () => {
         { path: '/page-26', labelKey: 'nav_economic_contributions' },
         { path: '/page-27', labelKey: 'nav_investment_detail' },
         { path: '/page-31', labelKey: 'nav_international_investment' },
-        { path: '/page-32', labelKey: 'nav_fdi_stock' }
+        { path: '/page-32', labelKey: 'nav_fdi_stock' },
+        { path: '/page-37', labelKey: 'nav_environmental_protection' }
     ];
 
     const currentIndex = pages.findIndex(p => p.path === location.pathname);
