@@ -224,84 +224,32 @@ const Page32 = () => {
                     }}
                 >
                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'View Data Table' : 'Voir le tableau de données'}
-                    <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
+                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
+                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                <div 
-                    role="region"
-                    aria-labelledby={captionId}
-                    tabIndex="0"
-                    style={{ 
-                        overflowX: 'auto',
-                        overflowY: 'visible',
-                        border: '1px solid #ccc', 
-                        borderTop: 'none',
-                        padding: '10px',
-                        maxHeight: 'none'
-                    }}
-                >
-                    <table style={{ 
-                        width: '100%', 
-                        minWidth: windowWidth <= 480 ? '100%' : '500px', 
-                        borderCollapse: 'collapse', 
-                        textAlign: 'left', 
-                        fontSize: '14px' 
-                    }}>
-                        <caption 
-                            id={captionId}
-                            style={{ 
-                                textAlign: 'left', 
-                                padding: '8px', 
-                                fontWeight: 'bold',
-                                backgroundColor: '#f0f0f0',
-                                whiteSpace: 'normal',
-                                wordBreak: 'break-word'
-                            }}
-                        >
+                <div className="table-responsive" style={{ marginTop: '10px' }}>
+                    <table className="table table-striped table-hover">
+                        <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Foreign control of Canadian assets (percentage of total assets)'
                                 : "Contrôle étranger d'actifs canadiens (pourcentage des actifs totaux)"}
                         </caption>
                         <thead>
-                            <tr style={{ backgroundColor: '#eee' }}>
-                                <th scope="col" style={{ 
-                                    padding: '8px', 
-                                    borderBottom: '2px solid #ddd',
-                                    position: 'sticky',
-                                    left: 0,
-                                    backgroundColor: '#eee',
-                                    zIndex: 2
-                                }}>
-                                    {lang === 'en' ? 'Year' : 'Année'}
-                                </th>
-                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
-                                    {getText('page32_legend_utilities', lang)}
-                                </th>
-                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
-                                    {getText('page32_legend_oil_gas', lang)}
-                                </th>
-                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
-                                    {getText('page32_legend_all_industries', lang)}
-                                </th>
+                            <tr>
+                                <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col">{getText('page32_legend_utilities', lang)}<span className="wb-inv">{unitText}</span></th>
+                                <th scope="col">{getText('page32_legend_oil_gas', lang)}<span className="wb-inv">{unitText}</span></th>
+                                <th scope="col">{getText('page32_legend_all_industries', lang)}<span className="wb-inv">{unitText}</span></th>
                             </tr>
                         </thead>
                         <tbody>
                             {chartData.map(yearData => (
-                                <tr key={yearData.year} style={{ borderBottom: '1px solid #eee' }}>
-                                    <th scope="row" style={{ 
-                                        padding: '8px', 
-                                        fontWeight: 'normal',
-                                        position: 'sticky',
-                                        left: 0,
-                                        backgroundColor: '#f9f9f9',
-                                        zIndex: 1
-                                    }}>
-                                        {yearData.year}
-                                    </th>
-                                    <td style={{ padding: '8px' }}>{formatNumber(yearData.utilities || 0)}%</td>
-                                    <td style={{ padding: '8px' }}>{formatNumber(yearData.oil_gas || 0)}%</td>
-                                    <td style={{ padding: '8px' }}>{formatNumber(yearData.all_non_financial || 0)}%</td>
+                                <tr key={yearData.year}>
+                                    <th scope="row">{yearData.year}</th>
+                                    <td>{formatNumber(yearData.utilities || 0)}%</td>
+                                    <td>{formatNumber(yearData.oil_gas || 0)}%</td>
+                                    <td>{formatNumber(yearData.all_non_financial || 0)}%</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -341,10 +289,24 @@ const Page32 = () => {
             }}
         >
             <style>{`
-                /* BASE: 100% zoom (>1745px) */
+                .page-32 {
+                    margin-left: -37px;
+                    margin-right: -30px;
+                    width: calc(100% + 67px);
+                }
+
+                .wb-inv {
+                    clip: rect(1px, 1px, 1px, 1px);
+                    height: 1px;
+                    margin: 0;
+                    overflow: hidden;
+                    position: absolute;
+                    width: 1px;
+                }
+
                 .page32-container {
                     width: 100%;
-                    padding: 15px 30px 20px 30px;
+                    padding: 15px 30px 20px 55px;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -496,10 +458,13 @@ const Page32 = () => {
                 /* 250% zoom (~768px) */
                 @media (max-width: 768px) {
                     .page-32 {
+                        margin-left: -20px !important;
+                        margin-right: -20px !important;
+                        width: calc(100% + 40px) !important;
                         border-left: none !important;
                     }
                     .page32-container {
-                        padding: 8px 15px;
+                        padding: 8px 20px 8px 45px !important;
                     }
                     .page32-title {
                         font-size: 1.3rem;
@@ -549,22 +514,9 @@ const Page32 = () => {
                     }
                 }
                 
-                /* Hide default disclosure triangle */
                 details summary::-webkit-details-marker,
                 details summary::marker {
                     display: none;
-                }
-
-                .sr-only {
-                    position: absolute;
-                    width: 1px;
-                    height: 1px;
-                    padding: 0;
-                    margin: -1px;
-                    overflow: hidden;
-                    clip: rect(0, 0, 0, 0);
-                    white-space: nowrap;
-                    border: 0;
                 }
             `}</style>
 
@@ -668,7 +620,7 @@ const Page32 = () => {
                 {/* Section Text - FIXED: Use SR-only span to ensure reading */}
                 <p className="page32-section-text">
                     {/* 1. Screen Reader sees this simple block */}
-                    <span className="sr-only">
+                    <span className="wb-inv">
                         {getText('page32_section_text', lang)}
                     </span>
                     
@@ -693,11 +645,7 @@ const Page32 = () => {
                         {getText('page32_chart_title', lang)}
                     </h3>
 
-                    {/* Chart overview for screen readers */}
-                    <div role="region" aria-label={getChartDataSummary()}>
-                        {/* Accessible data table */}
-                        {getAccessibleDataTable()}
-                        
+                        <div role="region" aria-label={getChartDataSummary()}>
                         <div className="page32-chart-wrapper">
                             <figure aria-hidden="true" className="page32-chart" style={{ margin: 0 }}>
                                 <Plot
@@ -758,6 +706,8 @@ const Page32 = () => {
                                 />
                             </figure>
                         </div>
+                        
+                        {getAccessibleDataTable()}
                     </div>
                 </div>
             </div>
@@ -766,4 +716,3 @@ const Page32 = () => {
 };
 
 export default Page32;
-

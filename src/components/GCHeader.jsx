@@ -1,5 +1,23 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
-
+const BREADCRUMBS = [
+    {
+        title: { en: 'Canada.ca', fr: 'Canada.ca' },
+        link: { en: 'https://www.canada.ca/en.html', fr: 'https://www.canada.ca/fr.html' }
+    },
+    {
+        title: { en: 'Environment and natural resources', fr: 'Environnement et ressources naturelles' },
+        link: { en: 'https://www.canada.ca/en/services/environment.html', fr: 'https://www.canada.ca/fr/services/environnement.html' }
+    },
+    {
+        title: { en: 'Energy', fr: 'Énergie' },
+        link: { en: 'https://www.canada.ca/en/services/environment/energy.html', fr: 'https://www.canada.ca/fr/services/environnement/energie.html' }
+    },
+    {
+        title: { en: 'Canadian Centre for Energy Information', fr: "Centre canadien d'information sur l'énergie" },
+        link: { en: 'https://energy-information.canada.ca/en', fr: 'https://information-energie.canada.ca/fr' }
+    }
+];
+// Full MENU_DATA restored from your uploaded file
 const MENU_DATA = [
     {
         id: 'jobs',
@@ -429,8 +447,8 @@ const MENU_DATA = [
 
 const GCHeader = ({ lang, onToggleLanguage }) => {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [activeMenu, setActiveMenu] = useState('jobs'); // For visual hover display
-    const [keyboardExpandedMenu, setKeyboardExpandedMenu] = useState(null); // For screen reader accordion behavior
+    const [activeMenu, setActiveMenu] = useState('jobs');
+    const [keyboardExpandedMenu, setKeyboardExpandedMenu] = useState(null);
     const [isCompactMode, setIsCompactMode] = useState(false);
     const [isMobileAccordion, setIsMobileAccordion] = useState(false);
     const [expandedMobileCategory, setExpandedMobileCategory] = useState(null);
@@ -444,13 +462,9 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
     const getItemUrl = (item) => lang === 'fr' ? item.urlFr : item.urlEn;
     const getHomeLink = (homeLink) => lang === 'fr' ? homeLink.fr : homeLink.en;
 
-    // Check for compact mode (250%+ zoom is roughly <= 768px effective width at 1920px base)
-    // Check for mobile accordion mode (200%+ zoom is roughly <= 960px effective width)
+    // Check for compact mode
     const checkCompactMode = useCallback(() => {
-        // At 250% zoom on 1920px screen = ~768px effective width
-        // At 400% zoom on 1920px screen = ~480px effective width
         setIsCompactMode(window.innerWidth <= 768);
-        // At 200% zoom on 1920px screen = ~960px effective width
         setIsMobileAccordion(window.innerWidth <= 960);
     }, []);
 
@@ -466,7 +480,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
         setMenuOpen(newMenuOpen);
         if (newMenuOpen) {
             setActiveMenu('jobs');
-            setKeyboardExpandedMenu(null); // All categories start collapsed for screen readers
+            setKeyboardExpandedMenu(null);
             setExpandedMobileCategory(null);
             setMostRequestedOpen(false);
             // Focus the first category button when menu opens
@@ -532,11 +546,8 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
     };
 
     // 2. FORCE FOCUS immediately after render
-    // We use useLayoutEffect because it fires synchronously after DOM mutations,
-    // ensuring we catch the element the moment it appears.
     useLayoutEffect(() => {
         if (menuOpen && keyboardExpandedMenu) {
-            // Target the specific title link of the active menu
             const targetId = `panel-title-link-${keyboardExpandedMenu}`;
             const targetElement = document.getElementById(targetId);
             
@@ -544,23 +555,19 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 targetElement.focus();
             }
         }
-    }, [keyboardExpandedMenu, menuOpen, activeMenu]); // Dependency on activeMenu ensures it runs after re-render
+    }, [keyboardExpandedMenu, menuOpen, activeMenu]);
 
-    // 3. Return focus to category button on Escape, Left Arrow, or Shift+Tab from first link
+    // 3. Return focus to category button on Escape, Left Arrow, or Shift+Tab
     const handleContentKeyDown = (e) => {
-        // Helper to collapse and focus - delays focus until after React re-renders
-        // to avoid double screen reader announcement
         const collapseAndFocus = () => {
-            const menuToFocus = activeMenu; // Capture current value
-            setKeyboardExpandedMenu(null); // Collapse so user can navigate to other categories
-            // Delay focus until after React updates aria-expanded
+            const menuToFocus = activeMenu;
+            setKeyboardExpandedMenu(null);
             setTimeout(() => {
                 const btn = document.getElementById(`btn-cat-${menuToFocus}`);
                 if (btn) btn.focus();
             }, 0);
         };
         
-        // Escape or Left Arrow: return to category button (collapsed)
         if (e.key === 'Escape' || e.key === 'ArrowLeft') {
             e.preventDefault();
             e.stopPropagation();
@@ -568,7 +575,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
             return;
         }
         
-        // Shift+Tab from first focusable element: return to category button (collapsed)
         if (e.key === 'Tab' && e.shiftKey) {
             const firstFocusable = document.getElementById(`panel-title-link-${activeMenu}`);
             if (document.activeElement === firstFocusable) {
@@ -604,18 +610,18 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-start;
-                    padding: 10px 30px 15px 55px; /* Left padding 55px = 30px container + 25px to align with MENU text */
+                    padding: 10px 30px 15px 55px; /* Left padding 55px */
                     max-width: 1400px;
                     margin: 0 auto;
                 }
                 
                 .gc-brand {
-                    margin-top: 30px; /* Align top of logo with top of search bar (below language link) */
+                    margin-top: 30px; 
                 }
                 
                 .gc-brand img { height: 33px; }
                 
-                /* Search and lang container - keeps them aligned */
+                /* Search and lang container */
                 .gc-search-lang-wrapper {
                     display: flex;
                     flex-direction: column;
@@ -672,7 +678,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 
                 .gc-search-btn:hover { background-color: #444444; }
                 
-                /* Menu bar - LEFT aligned under flag */
+                /* Menu bar */
                 .gc-menu-bar {
                     border-top: 1px solid #ddd;
                     position: relative;
@@ -683,11 +689,10 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     margin: 0 auto;
                     padding: 8px 30px;
                     display: flex;
-                    justify-content: flex-start; /* Left aligned */
-                    position: relative; /* Make dropdown position relative to this */
+                    justify-content: flex-start;
+                    position: relative;
                 }
                 
-                /* Menu button matching official site */
                 .gc-menu-btn {
                     background: white;
                     border: none;
@@ -722,7 +727,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     z-index: 1000;
                     border-bottom: 4px solid #26374a;
                     box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-                    width: 1300px; /* Fixed width */
+                    width: 1300px; 
                 }
                 
                 .gc-mega-menu.open { display: block; }
@@ -775,7 +780,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 
                 /* Right content area */
                 .gc-menu-content {
-                    width: 860px; /* Fixed width: 1200px total - 340px sidebar = 860px */
+                    width: 860px; 
                     padding: 25px 35px;
                     display: flex;
                     gap: 50px;
@@ -785,7 +790,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 
                 .gc-menu-links {
                     flex: 1;
-                    min-width: 320px; /* Prevent text wrapping */
+                    min-width: 320px; 
                 }
                 
                 .gc-menu-title {
@@ -821,14 +826,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 
                 .gc-menu-links-list a:hover { text-decoration: none; }
 
-                .gc-menu-category:focus {
-                    outline: 1px solid #ffffff;
-                    outline-offset: -2px;
-                    border:4px solid #000000;
-                    border-offset: 4px;
-                }
-}
-                
                 /* Most requested section */
                 .gc-most-requested {
                     width: 500px; 
@@ -863,34 +860,45 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     font-size: 18px;
                     line-height: 2;
                 }
-
-                .gc-menu-category:focus {
-                    outline: 1px solid #ffffff;
-                    outline-offset: -2px;
-                    border:4px solid #000000;
-                    border-offset: 4px;
-                }
                 
                 .gc-most-requested a:hover { text-decoration: none; }
                 
-                /* Breadcrumb - aligned with menu button TEXT */
+                /* Breadcrumb */
                 .gc-breadcrumb {
                     font-size: 16px;
+                    background-color: #fff;
                 }
                 
                 .gc-breadcrumb-inner {
                     max-width: 1400px;
                     margin: 0 auto;
                     padding: 10px 30px;
-                    padding-left: 55px; /* 30px container + 25px menu button left padding = align with MENU text */
+                    padding-left: 55px; 
                 }
-                
-                .gc-breadcrumb a {
+
+                .gc-breadcrumb-list {
+                    list-style: none;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    flex-wrap: wrap;
+                    align-items: center;
+                }
+
+                .gc-breadcrumb-item {
+                    display: inline-flex;
+                    align-items: center;
+                    color: #284162;
+                }
+
+                .gc-breadcrumb-link {
                     color: #284162;
                     text-decoration: underline;
                 }
                 
-                .gc-breadcrumb a:hover { text-decoration: none; }
+                .gc-breadcrumb-link:hover { 
+                    color: #0535d2;
+                }
                 
                 .wb-inv {
                     clip: rect(1px, 1px, 1px, 1px);
@@ -901,7 +909,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     width: 1px;
                 }
                 
-                /* Skip link button - visible on focus */
+                /* Skip link button */
                 .skip-link-btn {
                     background: transparent;
                     border: none;
@@ -928,7 +936,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 }
                 
                 /* Responsive */
-                /* 175% zoom (~1097px) - Most requested moves below links */
                 @media (max-width: 1097px) {
                     .gc-menu-content {
                         flex-direction: column;
@@ -943,11 +950,8 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     }
                 }
                 
-                /* 200%+ zoom (~960px) - Transform to accordion style */
                 @media (max-width: 960px) {
-                    /* Hide desktop menu */
                     .gc-mega-menu.desktop-menu { display: none !important; }
-                    /* Show mobile accordion menu */
                     .gc-mega-menu.mobile-menu.open { display: block !important; }
                     
                     .gc-mega-menu {
@@ -968,7 +972,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         background: #444444;
                     }
                     
-                    /* Accordion category buttons */
                     .gc-mobile-category {
                         display: flex;
                         align-items: center;
@@ -999,7 +1002,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         font-size: 12px;
                     }
                     
-                    /* Expanded content area */
                     .gc-mobile-content {
                         display: none;
                         background: white;
@@ -1010,7 +1012,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         display: block;
                     }
                     
-                    /* Home link with border */
                     .gc-mobile-home-link {
                         display: block;
                         padding: 15px 20px;
@@ -1025,7 +1026,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         text-decoration: none;
                     }
                     
-                    /* Links list in mobile */
                     .gc-mobile-links-list {
                         list-style: none;
                         padding: 0;
@@ -1049,7 +1049,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         background: #f5f5f5;
                     }
                     
-                    /* Most requested toggle button */
                     .gc-mobile-most-requested-toggle {
                         display: flex;
                         align-items: center;
@@ -1079,7 +1078,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         display: block;
                     }
                     
-                    /* Match links list styling */
                     .gc-mobile-most-requested-content ul {
                         list-style: disc;
                         padding: 0;
@@ -1108,25 +1106,20 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     }
                 }
                 
-                /* At low zoom: show desktop menu visually, but screen readers use accordion */
                 @media (min-width: 961px) {
-                    /* Desktop menu: visible to sighted users, hidden from screen readers */
                     .gc-mega-menu.desktop-menu.open { display: block; }
                     
-                    /* Accordion menu: completely hidden at desktop sizes (no duplicates) */
                     .gc-mega-menu.mobile-menu {
                         display: none !important;
                         border: 0 !important;
                     }
                     
-                    /* When accordion is open at desktop, still hidden */
                     .gc-mega-menu.mobile-menu.open {
                         display: none !important;
                         white-space: nowrap !important;
                         border: 0 !important;
                     }
                     
-                    /* Accordion not shown at desktop */
                     .gc-mega-menu.mobile-menu.open:focus-within {
                         display: none !important;
                         background: white;
@@ -1165,7 +1158,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         padding-left: 45px;
                     }
                     .gc-brand {
-                        margin-top: 0; /* Reset for mobile stacked layout */
+                        margin-top: 0; 
                     }
                     .gc-search-lang-wrapper {
                         width: 100%;
@@ -1182,14 +1175,42 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     }
                 }
                 
-                /* Very high zoom (500%+) - prevent logo cutoff */
+                @media (max-width: 480px) {
+                    .gc-header-main {
+                        padding-left: 10px !important;
+                        padding-right: 10px !important;
+                    }
+                    
+                    .gc-brand img {
+                        max-width: calc(100vw - 20px);
+                        height: auto;
+                    }
+
+                    .gc-menu-bar-inner {
+                        padding-left: 0 !important;
+                        padding-right: 0 !important;
+                    }
+                    
+                    .gc-menu-btn {
+                        padding-left: 10px !important;
+                        padding-right: 15px !important;
+                        width: auto !important; 
+                        justify-content: flex-start;
+                    }
+
+                    .gc-breadcrumb-inner {
+                        padding-left: 10px !important;
+                        padding-right: 10px !important;
+                    }
+                }
+
                 @media (max-width: 480px) {
                     .gc-header-main {
                         padding-left: 10px;
                         padding-right: 10px;
                     }
                     .gc-brand img {
-                        max-width: calc(100vw - 20px); /* Prevent cutoff */
+                        max-width: calc(100vw - 20px); 
                         height: auto;
                     }
                     .gc-menu-bar-inner {
@@ -1309,10 +1330,9 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         <span className={`gc-menu-chevron ${menuOpen ? 'open' : ''}`} aria-hidden="true">▼</span>
                     </button>
 
-                    {/* Desktop Mega Menu - accessible to screen readers */}
+                    {/* Desktop Mega Menu */}
                     <div id="gc-main-menu" className={`gc-mega-menu desktop-menu ${menuOpen ? 'open' : ''}`}>
                     <div className="gc-mega-menu-inner">
-                        {/* Left Sidebar - acts like accordion tabs for screen readers */}
                         <nav className="gc-menu-sidebar" aria-label={lang === 'en' ? 'Menu categories' : 'Catégories du menu'}>
                             {MENU_DATA.map((menu, index) => (
                                 <button
@@ -1374,7 +1394,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     </div>
                     </div>
 
-                    {/* Accordion Menu - shown at 200%+ zoom (visually and for screen readers) */}
+                    {/* Accordion Menu */}
                     <div id="gc-accordion-menu" className={`gc-mega-menu mobile-menu ${menuOpen ? 'open' : ''}`} aria-label={lang === 'en' ? 'Main navigation menu. Use Tab to navigate between categories, Enter to expand.' : 'Menu de navigation principal. Utilisez Tab pour naviguer entre les catégories, Entrée pour développer.'}>
                         <nav aria-label={lang === 'en' ? 'Menu categories' : 'Catégories du menu'}>
                             {MENU_DATA.map((menu) => {
@@ -1401,7 +1421,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                                             role="region"
                                             aria-labelledby={`accordion-btn-${menu.id}`}
                                         >
-                                            {/* Home link with border */}
                                             <a 
                                                 href={getHomeLink(menuData.homeLink)} 
                                                 className="gc-mobile-home-link"
@@ -1410,7 +1429,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                                                 {menuData.title[lang]}
                                             </a>
                                             
-                                            {/* Links list */}
                                             <ul className="gc-mobile-links-list" role="list">
                                                 {menuData.items.map((item, idx) => (
                                                     <li key={idx}>
@@ -1424,7 +1442,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                                                 ))}
                                             </ul>
                                             
-                                            {/* Most requested collapsible */}
                                             {menuData.mostRequested && menuData.mostRequested.length > 0 && (
                                                 <>
                                                     <button 
@@ -1467,15 +1484,24 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 </div>
             </div>
 
-            {/* Breadcrumb */}
-            <nav className="gc-breadcrumb" aria-label={lang === 'en' ? 'You are here' : 'Vous êtes ici'}>
+           {/* Breadcrumb */}
+           <nav className="gc-breadcrumb" aria-label={lang === 'en' ? 'You are here' : 'Vous êtes ici'}>
                 <div className="gc-breadcrumb-inner">
-                    <a 
-                        href={lang === 'en' ? 'https://www.canada.ca/en' : 'https://www.canada.ca/fr'}
-                        className="gc-breadcrumb-link"
-                    >
-                        Canada.ca
-                    </a>
+                    <ol className="gc-breadcrumb-list">
+                        {BREADCRUMBS.map((crumb, index) => (
+                            <li key={index} className="gc-breadcrumb-item">
+                                <a 
+                                    href={crumb.link[lang]}
+                                    className="gc-breadcrumb-link"
+                                >
+                                    {crumb.title[lang]}
+                                </a>
+                                {index < BREADCRUMBS.length - 1 && (
+                                    <span className="gc-breadcrumb-separator" aria-hidden="true" style={{ margin: '0 10px', color: '#555', fontSize: '1.2em' }}>›</span>
+                                )}
+                            </li>
+                        ))}
+                    </ol>
                 </div>
             </nav>
         </header>

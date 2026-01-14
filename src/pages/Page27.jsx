@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getInvestmentByAssetData } from '../utils/dataLoader';
@@ -11,43 +11,47 @@ const Page27 = () => {
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
+    const [isChartInteractive, setIsChartInteractive] = useState(false);
+    const chartRef = useRef(null);
 
-    // Track window width for responsive chart settings
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isChartInteractive && chartRef.current && !chartRef.current.contains(event.target)) {
+                setIsChartInteractive(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isChartInteractive]);
+
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Calculate legend settings based on zoom level (window width)
     const legendSettings = useMemo(() => {
-        // 400%+ Zoom (<=480px): Target 7 rows (1 column)
         if (windowWidth <= 480) {
-            return { width: 1.0, margin: 120, fontSize: 9, y: -0.25 };
+            return { width: 1.0, margin: 120, fontSize: 9, y: -0.25, x: 0, xanchor: 'left' };
         }
-        // 300% Zoom (<=640px): Target 6 rows
         else if (windowWidth <= 640) {
-            return { width: 0.85, margin: 120, fontSize: 11, y: -0.24 };
+            return { width: 0.85, margin: 120, fontSize: 11, y: -0.24, x: 0, xanchor: 'left' };
         }
-        // 200%-250% Zoom (<=960px): Target 4 rows (2 columns)
         else if (windowWidth <= 960) {
-            return { width: 0.49, margin: 120, fontSize: 12, y: -0.22 };
+            return { width: 0.49, margin: 120, fontSize: 12, y: -0.22, x: 0, xanchor: 'left' };
         }
-
         else if (windowWidth <= 1097) {
-            return { width: 0.49, margin: 120, fontSize: 14, y: -0.18 };
+            return { width: 0.49, margin: 120, fontSize: 14, y: -0.18, x: 0, xanchor: 'left' };
         }
-        // 125%-175% Zoom (<=1536px): Target 3 rows (3 columns)
         else if (windowWidth <= 1536) {
-            return { width: 0.32, margin: 120, fontSize: 14, y: -0.18 };
+            return { width: 0.32, margin: 120, fontSize: 14, y: -0.18, x: 0, xanchor: 'left' };
         }
-        // Default (100%-110% Zoom): Target 2 rows (4 columns)
         else {
-            return { width: 0.25, margin: 120, fontSize: 16, y: -0.15 };
+            return { width: 0.25, margin: 120, fontSize: 14, y: -0.15, x: 0, xanchor: 'left' };
         }
     }, [windowWidth]);
 
-    // Load data on mount
     useEffect(() => {
         getInvestmentByAssetData()
             .then(data => {
@@ -62,7 +66,6 @@ const Page27 = () => {
             });
     }, []);
 
-    // Colors matching the NRCan Factbook chart (from bottom to top of stack)
     const COLORS = {
         'transmission_distribution': '#224397',  
         'pipelines': '#857550',                  
@@ -73,7 +76,6 @@ const Page27 = () => {
         'steam_thermal': '#A78F16',             
     };
 
-    // Category order (bottom to top in stack) - matching Factbook order
     const CATEGORY_ORDER = [
         'transmission_distribution',
         'hydraulic',
@@ -84,7 +86,6 @@ const Page27 = () => {
         'other_electric'
     ];
 
-    // Legend key mapping
     const LEGEND_KEYS = {
         'transmission_distribution': 'page27_legend_transmission',
         'pipelines': 'page27_legend_pipelines',
@@ -95,7 +96,6 @@ const Page27 = () => {
         'steam_thermal': 'page27_legend_steam',
     };
 
-    // Hover key mapping
     const HOVER_KEYS = {
         'transmission_distribution': 'page27_hover_transmission',
         'pipelines': 'page27_hover_pipelines',
@@ -106,7 +106,6 @@ const Page27 = () => {
         'steam_thermal': 'page27_hover_steam',
     };
 
-    // Data processing
     const chartData = useMemo(() => {
         if (pageData.length === 0) return null;
 
@@ -114,24 +113,19 @@ const Page27 = () => {
         const minYear = Math.min(...years);
         const maxYear = Math.max(...years);
         
-        // Generate tick values (every 1 year)
         const tickVals = [];
         for (let y = minYear; y <= maxYear; y++) {
             tickVals.push(y);
         }
 
-        // Calculate totals for each year
         const totalValues = pageData.map(d => {
             let total = 0;
             CATEGORY_ORDER.forEach(cat => {
-                total += (d[cat] || 0) / 1000; // Convert to billions
+                total += (d[cat] || 0) / 1000;
             });
             return total;
         });
 
-        // Legend order changes based on zoom level
-        // At 125%+ zoom (<=1536px): left-to-right order
-        // At 100%-110% zoom (>1536px): 4-column layout order
         const LEGEND_ORDER_ZOOMED = [
             'transmission_distribution',
             'hydraulic',
@@ -154,12 +148,9 @@ const Page27 = () => {
         
         const LEGEND_ORDER = windowWidth <= 1536 ? LEGEND_ORDER_ZOOMED : LEGEND_ORDER_DEFAULT;
 
-        // Build traces for each category with per-category hover
         const traces = CATEGORY_ORDER.map((cat) => {
-            const values = pageData.map(d => (d[cat] || 0) / 1000); // Convert to billions
+            const values = pageData.map(d => (d[cat] || 0) / 1000);
             
-            // Build hover text for each bar
-            // Use 2 decimal places for values < 1B, 1 decimal place otherwise
             const hoverTexts = values.map((v, i) => {
                 const y = years[i];
                 const tot = totalValues[i];
@@ -169,7 +160,6 @@ const Page27 = () => {
                 return `${catName}<br>${y}: $${vFormatted}B<br><b>${getText('page27_hover_total', lang)}: $${totFormatted}B</b>`;
             });
 
-            // Get legend rank based on display order (not stack order)
             const legendRank = LEGEND_ORDER.indexOf(cat) + 2;
 
             return {
@@ -189,14 +179,11 @@ const Page27 = () => {
             };
         });
 
-        // Dynamic chart title with year range
         const chartTitle = `${getText('page27_chart_title_prefix', lang)}${minYear}–${maxYear}`;
 
         return { traces, years, tickVals, minYear, maxYear, chartTitle };
     }, [pageData, lang, windowWidth]);
 
-    // Format value for screen readers (avoids "$30.3" being read as "30 dollars and 30 cents")
-    // Use 2 decimal places for values < 1B, 1 decimal place otherwise
     const formatBillionSR = (val) => {
         const decimals = val < 1 ? 2 : 1;
         return lang === 'en' 
@@ -204,7 +191,6 @@ const Page27 = () => {
             : `${val.toFixed(decimals)} milliards de dollars`;
     };
 
-    // Screen reader summary
     const getChartDataSummary = () => {
         if (!pageData || pageData.length === 0) return '';
         
@@ -225,8 +211,6 @@ const Page27 = () => {
         }
     };
 
-    // Format number for screen readers using locale
-    // Use 2 decimal places for values < 1B, 1 decimal place otherwise
     const formatNumber = (val) => {
         const decimals = val < 1 ? 2 : 1;
         return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
@@ -235,14 +219,11 @@ const Page27 = () => {
         });
     };
 
-    // Helper to strip HTML tags from text
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
-    // Generate accessible data table with details/summary pattern
     const getAccessibleDataTable = () => {
         if (!pageData || pageData.length === 0) return null;
         
-        // Strip HTML tags from category labels
         const categoryLabels = {
             'transmission_distribution': stripHtml(getText('page27_legend_transmission', lang)),
             'hydraulic': stripHtml(getText('page27_legend_hydraulic', lang)),
@@ -262,9 +243,8 @@ const Page27 = () => {
                 style={{ 
                     marginTop: '10px', 
                     marginBottom: '10px', 
-                    width: '95%',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
+                    marginLeft: windowWidth <= 384 ? '30px' : windowWidth <= 480 ? '35px' : windowWidth <= 640 ? '40px' : windowWidth <= 768 ? '45px' : '55px',
+                    marginRight: windowWidth <= 384 ? '35px' : windowWidth <= 480 ? '30px' : windowWidth <= 640 ? '25px' : windowWidth <= 768 ? '20px' : '9px',
                     fontFamily: 'Arial, sans-serif'
                 }}
             >
@@ -283,59 +263,27 @@ const Page27 = () => {
                     }}
                 >
                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'View Data Table' : 'Voir le tableau de données'}
+                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                     <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
                 </summary>
 
-                <div 
-                    role="region"
-                    aria-labelledby={captionId}
-                    tabIndex="0"
-                    style={{ 
-                        overflowX: 'auto',
-                        overflowY: 'visible',
-                        border: '1px solid #ccc', 
-                        borderTop: 'none',
-                        padding: '10px',
-                        maxHeight: 'none'
-                    }}
-                >
-                    <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                        <caption 
-                            id={captionId}
-                            style={{ 
-                                textAlign: 'left', 
-                                padding: '8px', 
-                                fontWeight: 'bold',
-                                backgroundColor: '#f0f0f0'
-                            }}
-                        >
+                <div className="table-responsive" role="region" aria-labelledby={captionId}>
+                    <table className="table table-striped table-hover">
+                        <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Public and private investment in fuel, energy and pipeline infrastructure (billions of constant 2012 dollars)'
                                 : 'Investissements publics et privés dans les infrastructures de carburant, d\'énergie et de pipeline (milliards de dollars constants de 2012)'}
                         </caption>
                         <thead>
-                            <tr style={{ backgroundColor: '#eee' }}>
-                                <th scope="col" style={{ 
-                                    padding: '8px', 
-                                    borderBottom: '2px solid #ddd',
-                                    position: 'sticky',
-                                    left: 0,
-                                    backgroundColor: '#eee',
-                                    zIndex: 2
-                                }}>
-                                    {lang === 'en' ? 'Year' : 'Année'}
-                                </th>
+                            <tr>
+                                <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <th key={cat} scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd', whiteSpace: 'nowrap' }}>
+                                    <th key={cat} scope="col">
                                         {categoryLabels[cat]}
-                                        <span className="sr-only"> {unitText}</span>
+                                        <span className="wb-inv">{unitText}</span>
                                     </th>
                                 ))}
-                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
-                                    {lang === 'en' ? 'Total' : 'Total'}
-                                    <span className="sr-only"> {unitText}</span>
-                                </th>
+                                <th scope="col">{lang === 'en' ? 'Total' : 'Total'}<span className="wb-inv">{unitText}</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -345,23 +293,12 @@ const Page27 = () => {
                                     total += (yearData[cat] || 0) / 1000;
                                 });
                                 return (
-                                    <tr key={yearData.year} style={{ borderBottom: '1px solid #eee' }}>
-                                        <th scope="row" style={{ 
-                                            padding: '8px', 
-                                            fontWeight: 'normal',
-                                            position: 'sticky',
-                                            left: 0,
-                                            backgroundColor: '#f9f9f9',
-                                            zIndex: 1
-                                        }}>
-                                            {yearData.year}
-                                        </th>
+                                    <tr key={yearData.year}>
+                                        <th scope="row">{yearData.year}</th>
                                         {CATEGORY_ORDER.map(cat => (
-                                            <td key={cat} style={{ padding: '8px', whiteSpace: 'nowrap' }}>
-                                                {formatNumber((yearData[cat] || 0) / 1000)}
-                                            </td>
+                                            <td key={cat}>{formatNumber((yearData[cat] || 0) / 1000)}</td>
                                         ))}
-                                        <td style={{ padding: '8px', fontWeight: 'bold' }}>{formatNumber(total)}</td>
+                                        <td><strong>{formatNumber(total)}</strong></td>
                                     </tr>
                                 );
                             })}
@@ -397,20 +334,34 @@ const Page27 = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'visible',
-                borderRight: '18px solid #8e7e52',
                 boxSizing: 'border-box',
+                borderRight: '18px solid #8e7e52',
             }}
         >
             <style>{`
-                /* BASE: 100% zoom (>1745px) */
+                .page-27 {
+                    margin-left: -37px !important;
+                    margin-right: -30px !important;
+                    width: calc(100% + 67px) !important;
+                }
+                
                 .page27-container {
                     width: 100%;
-                    padding: 10px 30px 0px 30px;
+                    padding: 10px 0px 0px 0px;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
                     flex: 1;
                     overflow: visible;
+                }
+                
+                .page27-container header {
+                    padding-left: 55px;
+                    padding-right: 48px;
+                }
+                
+                .page27-container .chart-region {
+                    width: 100%;
                 }
                 
                 .page27-chart {
@@ -419,7 +370,6 @@ const Page27 = () => {
                     min-height: 350px;
                 }
 
-                /* 110% zoom (~1745px) */
                 @media (max-width: 1745px) {
                     .page27-chart {
                         height: calc(100vh - 280px);
@@ -427,57 +377,58 @@ const Page27 = () => {
                     }
                 }
 
-                /* 125% zoom (~1536px) */
                 @media (max-width: 1536px) {
-                    .page27-container {
-                        padding: 10px 25px 0px 25px;
-                    }
                     .page27-chart {
                         height: calc(100vh - 220px);
                         min-height: 360px;
                     }
                 }
 
-                /* 150% zoom (~1280px) */
                 @media (max-width: 1280px) {
-                    .page27-container {
-                        padding: 10px 20px 0px 20px;
-                    }
                     .page27-chart {
                         height: calc(100vh - 160px);
                         min-height: 340px;
+                        width: calc(100% - 40px) !important;
+                        margin-left: 35px !important;
                     }
                 }
 
-                /* 175% zoom (~1097px) */
                 @media (max-width: 1097px) {
                     .page27-chart {
                         height: calc(100vh - 120px);
                         min-height: 320px;
+                        width: calc(100% - 40px) !important;
+                        margin-left: 30px !important;
                     }
                 }
 
-                /* 200% zoom (~960px) */
                 @media (max-width: 960px) {
-                    .page27-container {
-                        padding: 8px 15px 0px 15px;
-                    }
                     .page27-chart {
                         height: calc(100vh - 80px);
                         min-height: 300px;
                     }
+
+                    .page-27 {
+                        margin-left: -47px !important;
+                        margin-right: -30px !important;
+                        width: calc(100% + 67px) !important;
+                    }
                 }
 
-                /* 250% zoom (~768px) */
                 @media (max-width: 768px) {
                     .page-27 {
+                        margin-left: -47px !important;
+                        margin-right: -30px !important;
+                        width: calc(100% + 67px) !important;
                         border-right: none !important;
                     }
-                    .page27-container {
-                        padding: 8px 15px;
+                    .page27-container header {
+                        padding-left: 45px;
+                        padding-right: 20px;
                     }
                     .page27-container h1 {
                         font-size: 1.4rem !important;
+                        text-align: left !important;
                     }
                     .page27-chart {
                         height: calc(100vh - 20px);
@@ -485,8 +436,11 @@ const Page27 = () => {
                     }
                 }
                 
-                /* 300% zoom (~640px) */
                 @media (max-width: 640px) {
+                    .page27-container header {
+                        padding-left: 40px;
+                        padding-right: 15px;
+                    }
                     .page27-container h1 {
                         font-size: 1.3rem !important;
                     }
@@ -494,43 +448,61 @@ const Page27 = () => {
                         height: calc(100vh + 100px);
                         min-height: 260px;
                     }
+
+                    .page-27 {
+                        margin-left: -41px !important;
+                        margin-right: -30px !important;
+                        width: calc(100% + 67px) !important;
+                    }
                 }
 
-                /* 400% zoom (~480px) */
                 @media (max-width: 480px) {
-                    .page27-container {
-                        padding: 5px 10px;
+                    .page27-container header {
+                        padding-left: 35px;
+                        padding-right: 10px;
                     }
                     .page27-container h1 {
                         font-size: 1.2rem !important;
                     }
                     .page27-chart {
-                        height: calc(100vh + 200px);
+                        height: calc(100vh + 200px) !important;
                         min-height: 240px;
+                        width: calc(100% - 50px) !important;
+                    }
+
+                     .page-27 {
+                        margin-left: -36px !important;
+                        margin-right: -30px !important;
+                        width: calc(100% + 67px) !important;
                     }
                 }
 
-                /* 500% zoom (~384px) */
                 @media (max-width: 384px) {
-                    .page27-container {
-                        padding: 5px 8px;
+                    .page27-container header {
+                        padding-left: 30px;
+                        padding-right: 24px;
                     }
                     .page27-container h1 {
                         font-size: 1.1rem !important;
                     }
                     .page27-chart {
-                        height: calc(100vh + 300px);
+                        height: calc(100vh + 225px) !important;
                         min-height: 220px;
+                        width: calc(100% - 55px) !important;
+                    }
+
+                    .page-27 {
+                        margin-left: -31px !important;
+                        margin-right: -30px !important;
+                        width: calc(100% + 67px) !important;
                     }
                 }
                 
-                /* Hide default disclosure triangle */
                 details summary::-webkit-details-marker,
                 details summary::marker {
                     display: none;
                 }
 
-                /* Screen reader only table - visually hidden but accessible */
                 .sr-only-table {
                     position: absolute;
                     width: 1px;
@@ -557,7 +529,6 @@ const Page27 = () => {
             `}</style>
 
             <div className="page27-container">
-                {/* Title */}
                 <header 
                     role="region"
                     aria-label={chartData.chartTitle}
@@ -569,21 +540,87 @@ const Page27 = () => {
                         fontWeight: 'bold',
                         marginBottom: '10px',
                         marginTop: '5px',
-                        textAlign: 'center',
+                        textAlign: 'left',
                     }}>
                         {chartData.chartTitle}
                     </h1>
                 </header>
 
-                {/* Chart */}
                 <div 
                     role="region"
                     aria-label={getChartDataSummary()}
                 >
-                    {/* Accessible data table for screen readers */}
-                    {getAccessibleDataTable()}
-                    
-                    <figure aria-hidden="true" style={{ margin: 0 }}>
+                    <figure ref={chartRef} aria-hidden="true" style={{ margin: 0, position: 'relative' }}>
+                        {!isChartInteractive && (
+                            <div
+                                onClick={() => setIsChartInteractive(true)}
+                                onDoubleClick={() => setIsChartInteractive(true)}
+                                onTouchEnd={(e) => {
+                                    const now = Date.now();
+                                    if (now - (e.target.lastTouch || 0) < 300) {
+                                        setIsChartInteractive(true);
+                                    }
+                                    e.target.lastTouch = now;
+                                }}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    zIndex: 10,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: 'rgba(255,255,255,0.01)'
+                                }}
+                                title={lang === 'en' ? 'Click to interact with chart' : 'Cliquez pour interagir avec le graphique'}
+                                role="button"
+                                aria-label={lang === 'en' ? 'Click to enable chart interaction' : 'Cliquez pour activer l\'interaction avec le graphique'}
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setIsChartInteractive(true);
+                                    }
+                                }}
+                            >
+                                <span style={{
+                                    background: 'rgba(0,0,0,0.7)',
+                                    color: 'white',
+                                    padding: '8px 16px',
+                                    borderRadius: '4px',
+                                    pointerEvents: 'none',
+                                    fontSize: '14px',
+                                    fontFamily: 'Arial, sans-serif'
+                                }}>
+                                    {lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'}
+                                </span>
+                            </div>
+                        )}
+                        {isChartInteractive && (
+                            <button
+                                onClick={() => setIsChartInteractive(false)}
+                                style={{
+                                    position: 'absolute',
+                                    top: 5,
+                                    right: 5,
+                                    zIndex: 20,
+                                    background: 'rgba(0,0,0,0.7)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '5px 10px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    fontFamily: 'Arial, sans-serif'
+                                }}
+                                aria-label={lang === 'en' ? 'Exit chart interaction mode' : 'Quitter le mode d\'interaction'}
+                            >
+                                {lang === 'en' ? 'Done' : 'Terminé'}
+                            </button>
+                        )}
                         <Plot
                             data={chartData.traces}
                             layout={{
@@ -619,8 +656,8 @@ const Page27 = () => {
                                 },
                                 legend: {
                                     orientation: 'h',
-                                    x: 0.5,
-                                    xanchor: 'center',
+                                    x: legendSettings.x,
+                                    xanchor: legendSettings.xanchor,
                                     y: legendSettings.y,
                                     yanchor: 'top',
                                     entrywidth: legendSettings.width,
@@ -629,8 +666,8 @@ const Page27 = () => {
                                     traceorder: 'normal'
                                 },
                                 margin: { 
-                                    l: windowWidth <= 480 ? 50 : windowWidth <= 768 ? 60 : 70, 
-                                    r: 15,
+                                    l: windowWidth <= 384 ? 30 : windowWidth <= 480 ? 35 : windowWidth <= 640 ? 40 : windowWidth <= 768 ? 45 : 55, 
+                                    r: windowWidth <= 384 ? 8 : windowWidth <= 480 ? 10 : windowWidth <= 640 ? 15 : windowWidth <= 768 ? 20 : 48,
                                     t: 10, 
                                     b: legendSettings.margin
                                 },
@@ -639,9 +676,15 @@ const Page27 = () => {
                             }}
                             className="page27-chart"
                             useResizeHandler={true}
-                            config={{ displayModeBar: false, responsive: true }}
+                            config={{ 
+                                displayModeBar: isChartInteractive, 
+                                responsive: true,
+                                scrollZoom: isChartInteractive
+                            }}
                         />
                     </figure>
+                    
+                    {getAccessibleDataTable()}
                 </div>
             </div>
         </main>
@@ -649,4 +692,3 @@ const Page27 = () => {
 };
 
 export default Page27;
-

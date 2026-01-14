@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -15,23 +14,17 @@ const Layout = () => {
         setLang(prev => prev === 'en' ? 'fr' : 'en');
     };
 
-    // Focus Management: When page changes, focus the main content
-    // This is the standard accessibility pattern for SPA navigation
+    // Focus Management
     useEffect(() => {
-        // Skip the first render (initial page load)
         if (isFirstRender.current) {
             isFirstRender.current = false;
             return;
         }
         
-        // Use setTimeout to ensure React has finished rendering the new page
-        // before attempting to focus the main content
         const focusTimer = setTimeout(() => {
             const mainContent = document.getElementById('main-content');
             if (mainContent) {
-                // Scroll to top first
                 window.scrollTo(0, 0);
-                // Then focus the main content
                 mainContent.focus({ preventScroll: true });
             }
         }, 100);
@@ -60,18 +53,15 @@ const Layout = () => {
         <>
             <style>{`
                 /* Reset box sizing */
-                * {
-                    box-sizing: border-box;
-                }
+                * { box-sizing: border-box; }
                 
-                /* Main wrapper - single column layout with single scrollbar */
+                /* Layout Wrapper */
                 .layout-wrapper {
                     display: flex;
                     flex-direction: column;
                     min-height: 100vh;
                 }
                 
-                /* Viewport section - allows content to grow beyond 100vh */
                 .layout-viewport {
                     min-height: 100vh;
                     display: flex;
@@ -79,55 +69,71 @@ const Layout = () => {
                     overflow: visible;
                 }
                 
-                /* Header area - flex-shrink 0 to maintain size */
-                .gc-header {
+                .gc-header { flex-shrink: 0; }
+                
+                /* Navigation Bar - Top */
+                .layout-nav-header {
                     flex-shrink: 0;
+                    background: none;
+                    padding: 10px 0; 
+                    z-index: 10;
+                    width: 100%;
                 }
                 
-                /* Main content area - fills remaining space */
+                .page-navigation {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    width: 100%;
+                    max-width: 1400px;
+                    margin: 0 auto;
+                    /* DESKTOP (Default): 55px Left (Aligns with Flag), 30px Right (Aligns with Lang) */
+                    padding: 0 30px 0 55px; 
+                }
+                
+                /* Main Content Area */
                 .layout-main-area {
                     flex: 1 1 auto;
                     display: flex;
                     flex-direction: column;
                     min-height: 0;
                     overflow: visible;
+                    position: relative;
                 }
                 
-                /* Content wrapper */
                 .layout-content-wrapper {
                     flex: 1 1 auto;
                     display: flex;
                     flex-direction: column;
                     min-height: 0;
                     overflow: visible;
+                    position: relative;
                 }
                 
-                /* Page content - no internal scroll */
                 .layout-page-content {
-                    flex: 1 1 auto;
-                    min-height: 0;
-                    display: flex;
-                    flex-direction: column;
+                    overflow: visible;
+                    position: relative;
+                }
+                
+                /* Strict Alignment Container */
+                .layout-content-container {
+                    width: 100%;
+                    max-width: 1400px;
+                    margin: 0 auto;
+                    padding: 20px 30px 20px 37px;
+                    text-align: left;
+                    position: relative;
                     overflow: visible;
                 }
                 
-                /* Navigation buttons - always visible at bottom of viewport */
-                .layout-nav-footer {
-                    flex-shrink: 0;
-                    background: #f5f5f5;
-                    border-top: 1px solid #ddd;
-                    padding: 12px 20px;
+                h1, h2, h3, h4, h5, h6 { 
+                    text-align: left !important; 
                 }
                 
-                .page-navigation {
-                    display: flex;
-                    justify-content: space-between;
-                    max-width: 1400px;
-                    margin: 0 auto;
-                }
-                
-                /* Original navigation button style - blue underlined links */
+                /* Nav Buttons */
                 .nav-arrow {
+                    display: inline-flex;
+                    align-items: center;
                     color: #ffffff;
                     background-color: #284162;
                     text-decoration: none;
@@ -136,11 +142,15 @@ const Layout = () => {
                     padding: 8px 12px;
                     border-radius: 4px;
                     transition: background-color 0.2s;
+                    
+                    /* Desktop Wrapping Settings */
+                    white-space: normal; 
+                    max-width: 400px;
+                    text-align: left;
+                    line-height: 1.3;
                 }
                 
-                .nav-arrow:hover {
-                    background-color: #444444;
-                }
+                .nav-arrow:hover { background-color: #444444; }
                 
                 .nav-arrow.disabled {
                     color: #a0a0a0;
@@ -148,33 +158,114 @@ const Layout = () => {
                     background-color: transparent;
                 }
                 
-                                .nav-arrow:focus {
-                                    outline: 2px solid #005fcc;
-                                    outline-offset: 2px;
-                                }
+                .nav-arrow:focus {
+                    outline: 2px solid #005fcc;
+                    outline-offset: 2px;
+                }
+
+                /* --- BREAKPOINTS --- */
+
+                /* 1. Intermediate Zoom (200% / 960px) 
+                   Issue: Buttons need to stack, BUT padding must remain desktop-like (55px)
+                   because Header flag is still at 55px until 768px.
+                */
+                @media (max-width: 960px) {
+                    .page-navigation {
+                        flex-direction: column; /* Stack buttons */
+                        gap: 10px;
+                        /* KEEP 55px LEFT to match header flag */
+                        padding: 0 30px 0 55px !important; 
+                    }
+                    
+                    .nav-arrow {
+                        width: 100%;
+                        max-width: none;
+                        justify-content: center;
+                    }
+                    
+                    /* Update Layout Container padding for Page 1 calculations */
+                    .layout-content-container {
+                        padding: 15px 30px 15px 45px; 
+                    }
+                }
+
+                /* 2. Tablet Mode (<= 768px)
+                   Header flag moves to 45px left. Nav must match.
+                */
+                @media (max-width: 768px) {
+                    .page-navigation {
+                        /* Switch to 45px Left to match Header mobile state */
+                        padding: 0 20px 0 45px !important;
+                    }
+
+                    .layout-content-container {
+                        padding: 15px 20px 15px 45px; 
+                    }
+                }
+
+                /* 3. Mobile Mode (<= 480px)
+                   Header flag moves to 10px left. Nav must match.
+                */
+                @media (max-width: 480px) {
+                    .page-navigation {
+                        padding: 0 10px !important;
+                    }
+                    .layout-content-container {
+                        padding: 15px 10px;
+                    }
+                    
+                    .nav-arrow {
+                        font-size: 0.9rem;
+                        padding: 10px;
+                    }
+                }
+
+                    /* GHOST NAVIGATION STYLES */
+/* 1. Hides the link visually but keeps it in the DOM for Screen Readers */
+.sr-only-focusable {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* 2. When focused (via Tab key), it pops into view */
+.sr-only-focusable:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+    white-space: normal;
+    overflow: visible;
+    
+    /* Visual styling to look like a button */
+    display: inline-block;
+    margin-top: 20px;
+    margin-right: 15px;
+    padding: 10px 20px;
+    background-color: #284162; /* Matches your top nav color */
+    color: #ffffff;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 4px;
+    outline: 3px solid #ffcc00; /* High visibility focus ring */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 9999;
+}
             `}</style>
             
             <div className="layout-wrapper">
-                {/* Viewport section - fills exactly 100vh */}
                 <div className="layout-viewport">
-                    {/* Government of Canada Header */}
                     <GCHeader lang={lang} onToggleLanguage={toggleLanguage} />
 
-                    {/* Sidebar */}
-                    <Sidebar lang={lang} />
-
-                    {/* Main Content Area */}
-                    <div className="layout-main-area">
-                        <div className="content layout-content-wrapper">
-                            <div className="layout-page-content">
-                                <Outlet context={{ lang }} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Navigation Buttons - Always visible */}
-                    <div className="layout-nav-footer">
-                        <nav id="page-navigation-footer" className="page-navigation" aria-label={lang === 'en' ? 'Page navigation' : 'Navigation de page'}>
+                    {/* Navigation Buttons */}
+                    <div className="layout-nav-header">
+                        <nav id="page-navigation-top" className="page-navigation" aria-label={lang === 'en' ? 'Page navigation' : 'Navigation de page'}>
                             {prevPage ? (
                                 <Link 
                                     to={prevPage.path} 
@@ -210,9 +301,46 @@ const Layout = () => {
                             )}
                         </nav>
                     </div>
+
+                    <div className="layout-main-area">
+                        <Sidebar lang={lang} />
+                        <div className="content layout-content-wrapper">
+                            <div className="layout-page-content">
+                                <div className="layout-content-container">
+                                <Outlet context={{ lang }} />
+
+{/* --- START GHOST NAVIGATION --- 
+    These links are invisible to mouse users.
+    They only appear when a keyboard/screen reader user tabs past the content.
+*/}
+<div className="text-center" style={{ textAlign: 'center' }}>
+    {prevPage && (
+        <Link 
+            to={prevPage.path} 
+            className="sr-only-focusable"
+        >
+            {/* Screen Reader hears: "Previous page" */}
+            {lang === 'en' ? 'Previous page' : 'Page précédente'}
+        </Link>
+    )}
+
+    {nextPage && (
+        <Link 
+            to={nextPage.path} 
+            className="sr-only-focusable"
+        >
+            {/* Screen Reader hears: "Next page" */}
+            {lang === 'en' ? 'Next page' : 'Page suivante'}
+        </Link>
+    )}
+</div>
+{/* --- END GHOST NAVIGATION --- */}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Footer - revealed by scrolling past viewport */}
                 <GCFooter lang={lang} />
             </div>
         </>

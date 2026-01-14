@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getInternationalInvestmentData } from '../utils/dataLoader';
@@ -11,15 +11,26 @@ const Page31 = () => {
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
+    const [isChartInteractive, setIsChartInteractive] = useState(false);
+    const chartRef = useRef(null);
 
-    // Track window width for responsive chart settings
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isChartInteractive && chartRef.current && !chartRef.current.contains(event.target)) {
+                setIsChartInteractive(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isChartInteractive]);
+
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Load data on mount
     useEffect(() => {
         getInternationalInvestmentData()
             .then(data => {
@@ -34,13 +45,11 @@ const Page31 = () => {
             });
     }, []);
 
-    // Colors matching the NRCan Factbook chart
     const COLORS = {
         'cdia': '#419563',  
         'fdi': '#2EA3AD',  
     };
 
-    // Data processing
     const chartData = useMemo(() => {
         if (pageData.length === 0) return null;
 
@@ -48,18 +57,14 @@ const Page31 = () => {
         const minYear = Math.min(...years);
         const maxYear = Math.max(...years);
         
-        // Generate tick values: start at 2008, every 2 years up to maxYear
         const tickVals = [];
         for (let y = 2008; y <= maxYear; y += 2) {
             tickVals.push(y);
         }
 
-        // Build traces for CDIA and FDI (grouped bars)
-        // Values are in millions, convert to billions
         const cdiaValues = pageData.map(d => (d.cdia || 0) / 1000);
         const fdiValues = pageData.map(d => (d.fdi || 0) / 1000);
 
-        // Build hover text
         const cdiaHoverText = cdiaValues.map((v, i) => {
             const vFormatted = v < 1 ? v.toFixed(2) : v.toFixed(1);
             return `${getText('page31_hover_cdia', lang)}<br>${years[i]}: $${vFormatted}B`;
@@ -104,7 +109,6 @@ const Page31 = () => {
         return { traces, years, tickVals, minYear, maxYear, cdiaValues, fdiValues };
     }, [pageData, lang, windowWidth]);
 
-    // Format value for screen readers
     const formatBillionSR = (val) => {
         const decimals = val < 1 ? 2 : 1;
         return lang === 'en' 
@@ -112,7 +116,6 @@ const Page31 = () => {
             : `${val.toFixed(decimals)} milliards de dollars`;
     };
 
-    // Screen reader summary - uses full names instead of acronyms
     const getChartDataSummary = () => {
         if (!pageData || pageData.length === 0) return '';
         
@@ -128,7 +131,6 @@ const Page31 = () => {
         }
     };
 
-    // Screen reader version of chart title (no asterisk, full names)
     const getChartTitleSR = () => {
         if (lang === 'en') {
             return 'Stock of foreign direct investment in Canada and Canadian direct investment abroad in the energy industry';
@@ -137,7 +139,6 @@ const Page31 = () => {
         }
     };
 
-    // Screen reader version of footnotes (no asterisks, full names)
     const getFootnotesSR = () => {
         if (lang === 'en') {
             return 'Direct investment is defined as a company owning a minimum of 10% of voting equity interest in a foreign enterprise and is measured as the total equity value at the time of acquisition. Excludes residential expenditures and intellectual property investments such as exploration expenses. Foreign direct investment and Canadian direct investment abroad include investments in renewable electricity, do not capture other forms of renewable energy.';
@@ -146,7 +147,6 @@ const Page31 = () => {
         }
     };
 
-    // Format number for table display
     const formatNumber = (val) => {
         const decimals = val < 1 ? 2 : 1;
         return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
@@ -155,7 +155,6 @@ const Page31 = () => {
         });
     };
 
-    // Generate accessible data table
     const getAccessibleDataTable = () => {
         if (!pageData || pageData.length === 0) return null;
         
@@ -189,65 +188,22 @@ const Page31 = () => {
                     }}
                 >
                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'View Data Table' : 'Voir le tableau de données'}
+                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                     <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
                 </summary>
 
-                <div 
-                    role="region"
-                    aria-labelledby={captionId}
-                    tabIndex="0"
-                    style={{ 
-                        overflowX: 'auto',
-                        overflowY: 'visible',
-                        border: '1px solid #ccc', 
-                        borderTop: 'none',
-                        padding: '10px',
-                        maxHeight: 'none'
-                    }}
-                >
-                    <table style={{ 
-                        width: '100%', 
-                        minWidth: windowWidth <= 480 ? '100%' : '400px', 
-                        borderCollapse: 'collapse', 
-                        textAlign: 'left', 
-                        fontSize: '14px' 
-                    }}>
-                        <caption 
-                            id={captionId}
-                            style={{ 
-                                textAlign: 'left', 
-                                padding: '8px', 
-                                fontWeight: 'bold',
-                                backgroundColor: '#f0f0f0',
-                                whiteSpace: 'normal',
-                                wordBreak: 'break-word'
-                            }}
-                        >
+                <div className="table-responsive" role="region" aria-labelledby={captionId}>
+                    <table className="table table-striped table-hover">
+                        <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Stock of foreign direct investment (FDI) in Canada and Canadian direct investment abroad (CDIA) in the energy industry (billions of dollars)'
                                 : "Stock d'investissement direct étranger (IDE) au Canada et investissement direct canadien à l'étranger (IDCE) dans le secteur de l'énergie (milliards de dollars)"}
                         </caption>
                         <thead>
-                            <tr style={{ backgroundColor: '#eee' }}>
-                                <th scope="col" style={{ 
-                                    padding: '8px', 
-                                    borderBottom: '2px solid #ddd',
-                                    position: 'sticky',
-                                    left: 0,
-                                    backgroundColor: '#eee',
-                                    zIndex: 2
-                                }}>
-                                    {lang === 'en' ? 'Year' : 'Année'}
-                                </th>
-                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
-                                    {getText('page31_legend_cdia', lang)}
-                                    <span className="sr-only">{unitText}</span>
-                                </th>
-                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
-                                    {getText('page31_legend_fdi', lang)}
-                                    <span className="sr-only">{unitText}</span>
-                                </th>
+                            <tr>
+                                <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col">{getText('page31_legend_cdia', lang)}<span className="wb-inv">{unitText}</span></th>
+                                <th scope="col">{getText('page31_legend_fdi', lang)}<span className="wb-inv">{unitText}</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -255,19 +211,10 @@ const Page31 = () => {
                                 const cdiaVal = (yearData.cdia || 0) / 1000;
                                 const fdiVal = (yearData.fdi || 0) / 1000;
                                 return (
-                                    <tr key={yearData.year} style={{ borderBottom: '1px solid #eee' }}>
-                                        <th scope="row" style={{ 
-                                            padding: '8px', 
-                                            fontWeight: 'normal',
-                                            position: 'sticky',
-                                            left: 0,
-                                            backgroundColor: '#f9f9f9',
-                                            zIndex: 1
-                                        }}>
-                                            {yearData.year}
-                                        </th>
-                                        <td style={{ padding: '8px' }}>{formatNumber(cdiaVal)}</td>
-                                        <td style={{ padding: '8px' }}>{formatNumber(fdiVal)}</td>
+                                    <tr key={yearData.year}>
+                                        <th scope="row">{yearData.year}</th>
+                                        <td>{formatNumber(cdiaVal)}</td>
+                                        <td>{formatNumber(fdiVal)}</td>
                                     </tr>
                                 );
                             })}
@@ -304,15 +251,20 @@ const Page31 = () => {
                 flexDirection: 'column',
                 overflowY: 'auto',
                 overflowX: 'hidden',
-                borderRight: '18px solid #8e7e52',
                 boxSizing: 'border-box',
+                borderRight: '18px solid #8e7e52',
             }}
         >
             <style>{`
-                /* BASE: 100% zoom (>1745px) */
+                .page-31 {
+                    margin-left: -37px;
+                    margin-right: -30px;
+                    width: calc(100% + 67px);
+                }
+                
                 .page31-container {
                     width: 100%;
-                    padding: 15px 30px 0 30px;
+                    padding: 15px 12px 0 55px;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -360,7 +312,6 @@ const Page31 = () => {
                     line-height: 1.4;
                 }
 
-                /* 110% zoom (~1745px) */
                 @media (max-width: 1745px) {
                     .page31-chart {
                         height: calc(100vh - 450px);
@@ -369,7 +320,6 @@ const Page31 = () => {
                     }
                 }
 
-                /* 125% zoom (~1536px) */
                 @media (max-width: 1536px) {
                     .page31-container {
                         padding: 10px 25px 10px 25px;
@@ -384,7 +334,6 @@ const Page31 = () => {
                     }
                 }
 
-                /* 150% zoom (~1280px) */
                 @media (max-width: 1280px) {
                     .page31-container {
                         padding: 10px 20px 10px 20px;
@@ -399,7 +348,6 @@ const Page31 = () => {
                     }
                 }
 
-                /* 175% zoom (~1097px) */
                 @media (max-width: 1097px) {
                     .page31-title {
                         font-size: 1.5rem;
@@ -414,7 +362,6 @@ const Page31 = () => {
                     }
                 }
 
-                /* 200% zoom (~960px) */
                 @media (max-width: 960px) {
                     .page31-container {
                         padding: 8px 15px 8px 15px;
@@ -432,19 +379,23 @@ const Page31 = () => {
                     }
                 }
 
-                /* 250% zoom (~768px) */
                 @media (max-width: 768px) {
                     .page-31 {
+                        margin-left: -20px !important;
+                        margin-right: -20px !important;
+                        width: calc(100% + 40px) !important;
                         border-right: none !important;
                     }
                     .page31-container {
-                        padding: 8px 15px;
+                        padding: 8px 20px 8px 45px !important;
                     }
                     .page31-title {
                         font-size: 1.3rem;
+                        text-align: left !important;
                     }
                     .page31-subtitle {
                         font-size: 1.2rem;
+                        text-align: left !important;
                     }
                     .page31-chart {
                         height: 400px;
@@ -456,7 +407,6 @@ const Page31 = () => {
                     }
                 }
                 
-                /* 300% zoom (~640px) */
                 @media (max-width: 640px) {
                     .page31-title {
                         font-size: 1.2rem;
@@ -470,7 +420,6 @@ const Page31 = () => {
                     }
                 }
 
-                /* 400% zoom (~480px) */
                 @media (max-width: 480px) {
                     .page31-container {
                         padding: 5px 10px;
@@ -487,7 +436,6 @@ const Page31 = () => {
                     }
                 }
 
-                /* 500% zoom (~384px) */
                 @media (max-width: 384px) {
                     .page31-container {
                         padding: 5px 8px;
@@ -504,7 +452,6 @@ const Page31 = () => {
                     }
                 }
                 
-                /* Hide default disclosure triangle */
                 details summary::-webkit-details-marker,
                 details summary::marker {
                     display: none;
@@ -524,7 +471,6 @@ const Page31 = () => {
             `}</style>
 
             <div className="page31-container">
-                {/* Header Section */}
                 <header role="region" aria-label={getText('page31_title', lang)}>
                     <h1 className="page31-title" aria-hidden="true">
                         {getText('page31_title', lang)}
@@ -534,28 +480,90 @@ const Page31 = () => {
                     </p>
                 </header>
 
-                {/* Chart Section */}
                 <div>
-                    {/* Chart Title - visible version with asterisk */}
                     <h2 className="page31-chart-title" aria-hidden="true">
                         {getText('page31_chart_title', lang)}
                     </h2>
                     
-                    {/* Screen reader: Chart title (no asterisk, full names) */}
                     <h2 className="sr-only">{getChartTitleSR()}</h2>
                     
-                    {/* Screen reader: Footnotes read immediately after title */}
                     <p className="sr-only">{getFootnotesSR()}</p>
 
-                    {/* Chart overview for screen readers */}
                     <div 
                         role="region"
                         aria-label={getChartDataSummary()}
                     >
-                        {/* Accessible data table */}
-                        {getAccessibleDataTable()}
-                        
-                        <figure aria-hidden="true" style={{ margin: 0 }}>
+                        <figure ref={chartRef} aria-hidden="true" style={{ margin: 0, position: 'relative' }}>
+                            {!isChartInteractive && (
+                                <div
+                                    onClick={() => setIsChartInteractive(true)}
+                                    onDoubleClick={() => setIsChartInteractive(true)}
+                                    onTouchEnd={(e) => {
+                                        const now = Date.now();
+                                        if (now - (e.target.lastTouch || 0) < 300) {
+                                            setIsChartInteractive(true);
+                                        }
+                                        e.target.lastTouch = now;
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        zIndex: 10,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: 'rgba(255,255,255,0.01)'
+                                    }}
+                                    title={lang === 'en' ? 'Click to interact with chart' : 'Cliquez pour interagir avec le graphique'}
+                                    role="button"
+                                    aria-label={lang === 'en' ? 'Click to enable chart interaction' : 'Cliquez pour activer l\'interaction avec le graphique'}
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setIsChartInteractive(true);
+                                        }
+                                    }}
+                                >
+                                    <span style={{
+                                        background: 'rgba(0,0,0,0.7)',
+                                        color: 'white',
+                                        padding: '8px 16px',
+                                        borderRadius: '4px',
+                                        pointerEvents: 'none',
+                                        fontSize: '14px',
+                                        fontFamily: 'Arial, sans-serif'
+                                    }}>
+                                        {lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'}
+                                    </span>
+                                </div>
+                            )}
+                            {isChartInteractive && (
+                                <button
+                                    onClick={() => setIsChartInteractive(false)}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 5,
+                                        right: 5,
+                                        zIndex: 20,
+                                        background: 'rgba(0,0,0,0.7)',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '5px 10px',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontSize: '12px',
+                                        fontFamily: 'Arial, sans-serif'
+                                    }}
+                                    aria-label={lang === 'en' ? 'Exit chart interaction mode' : 'Quitter le mode d\'interaction'}
+                                >
+                                    {lang === 'en' ? 'Done' : 'Terminé'}
+                                </button>
+                            )}
                             <Plot
                             data={chartData.traces}
                             layout={{
@@ -605,21 +613,34 @@ const Page31 = () => {
                             }}
                             style={{ width: '100%', height: windowWidth <= 768 ? '320px' : '340px' }}
                             useResizeHandler={true}
-                            config={{ displayModeBar: false, responsive: true }}
+                            config={{ 
+                                displayModeBar: isChartInteractive, 
+                                responsive: true,
+                                scrollZoom: isChartInteractive
+                            }}
                             />
                         </figure>
+                        
+                        {getAccessibleDataTable()}
                     </div>
                 </div>
 
-                {/* Footnotes - visible version (hidden from screen readers since read above) */}
-                <footer className="page31-footnotes" aria-hidden="true">
-                    <p style={{ marginBottom: '8px' }}>{getText('page31_footnote1', lang)}</p>
-                    <p>{getText('page31_footnote2', lang)}</p>
-                </footer>
+                <aside className="wb-fnote" role="note" style={{ marginTop: '10px', padding: '10px 0' }}>
+                    <h2 id="fn-page31" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                    <dl className="page31-footnotes" style={{ margin: 0 }}>
+                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
+                        <dd id="fn1-page31" style={{ margin: '0 0 8px 0' }}>
+                            <p style={{ margin: 0 }}>{getText('page31_footnote1', lang)}</p>
+                        </dd>
+                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 2' : 'Note de bas de page 2'}</dt>
+                        <dd id="fn2-page31" style={{ margin: 0 }}>
+                            <p style={{ margin: 0 }}>{getText('page31_footnote2', lang)}</p>
+                        </dd>
+                    </dl>
+                </aside>
             </div>
         </main>
     );
 };
 
 export default Page31;
-

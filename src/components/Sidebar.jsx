@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { getText } from '../utils/translations';
 
@@ -7,6 +7,7 @@ const Sidebar = ({ lang }) => {
     // Start collapsed - user must expand to see contents
     const [section1Expanded, setSection1Expanded] = useState(false);
     const [section2Expanded, setSection2Expanded] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const toggleSection1 = () => {
         setSection1Expanded(!section1Expanded);
@@ -31,8 +32,81 @@ const Sidebar = ({ lang }) => {
         }
     };
 
+    // Close sidebar when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const sidebar = document.querySelector('.sidebar');
+            const toggleBtn = document.querySelector('.sidebar-mobile-toggle');
+            if (sidebarOpen && sidebar && !sidebar.contains(event.target) && 
+                toggleBtn && !toggleBtn.contains(event.target)) {
+                setSidebarOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [sidebarOpen]);
+
     return (
-        <div className="sidebar" role="navigation" aria-label={lang === 'en' ? 'Main Navigation' : 'Navigation principale'}>
+        <>
+        <style>{`
+
+               @media (max-width: 768px) {
+                    /* Make the collapsed strip even wider at high zoom */
+                    .sidebar {
+                        width: 10px; 
+                    }
+                    
+                    /* Force full menu width when opened */
+                    .sidebar:hover, 
+                    .sidebar.sidebar-mobile-open {
+                        width: 300px !important; 
+                    }
+
+                @media (max-width: 640px) {
+                    .sidebar {
+                        width: 30px; 
+                    }
+                    
+                    /* Force full menu width when opened */
+                    .sidebar:hover, 
+                    .sidebar.sidebar-mobile-open {
+                        width: 300px !important; 
+                    }
+                }
+                
+                /* 400% - 500% Zoom (Mobile) Overrides */
+                @media (max-width: 480px) {
+                    .sidebar-mobile-toggle {
+                        width: 50px !important; 
+                        margin-top: -45px !important;
+                        height: 50px !important;
+                        font-size: 1.5rem !important; 
+                    }
+                }
+            `}</style>
+            {/* Mobile toggle button - always visible */}
+            <button
+                className={`sidebar-mobile-toggle ${sidebarOpen ? 'open' : ''}`}
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                aria-label={sidebarOpen 
+                    ? (lang === 'en' ? 'Close navigation menu' : 'Fermer le menu de navigation')
+                    : (lang === 'en' ? 'Open navigation menu' : 'Ouvrir le menu de navigation')
+                }
+                aria-expanded={sidebarOpen}
+            >
+                <span aria-hidden="true">{sidebarOpen ? '✕' : '☰'}</span>
+            </button>
+
+            <div 
+                className={`sidebar ${sidebarOpen ? 'sidebar-mobile-open' : ''}`} 
+                role="navigation" 
+                aria-label={getText('main_navigation', lang)}
+            >
             <div className="sidebar-header">
                 <span id="sidebar-title">{getText('table_of_contents', lang)}</span>
             </div>
@@ -171,6 +245,7 @@ const Sidebar = ({ lang }) => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

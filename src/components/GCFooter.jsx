@@ -3,7 +3,7 @@ import React from 'react';
 const GCFooter = ({ lang }) => {
     // URLs are now explicitly defined for each language in link objects
 
-    // NRCan contextual links - from footer-fr.txt
+    // NRCan contextual links
     const nrcanLinks = [
         { 
             en: { text: 'Contact NRCan', url: 'https://contact-contactez.nrcan-rncan.gc.ca/index.cfm?lang=eng&context=https%3A//admin.natural-resources.canada.ca/home' },
@@ -19,7 +19,7 @@ const GCFooter = ({ lang }) => {
         }
     ];
 
-    // Government of Canada footer links - from footer-fr.txt
+    // Government of Canada footer links
     const govLinks = [
         { 
             en: { text: 'All Contacts', url: 'https://www.canada.ca/en/contact.html' },
@@ -35,7 +35,7 @@ const GCFooter = ({ lang }) => {
         }
     ];
 
-    // Themes and topics links - from footer-fr.txt
+    // Themes and topics links
     const themeLinks = [
         { 
             en: { text: 'Jobs', url: 'https://www.canada.ca/en/services/jobs.html' },
@@ -111,7 +111,7 @@ const GCFooter = ({ lang }) => {
         }
     ];
 
-    // Brand links (bottom row) - from footer-fr.txt
+    // Brand links
     const brandLinks = [
         { 
             en: { text: 'Social media', url: 'https://www.canada.ca/en/social.html' },
@@ -181,7 +181,8 @@ const GCFooter = ({ lang }) => {
                 .gc-footer-container {
                     max-width: 1400px;
                     margin: 0 auto;
-                    padding: 0 20px 0 130px;
+                    /* ALIGNMENT FIX: Left 55px (Flag), Right 30px (Lang Button) */
+                    padding: 0 30px 0 55px;
                 }
                 
                 /* Contextual Navigation Section (NRCan) */
@@ -343,7 +344,7 @@ const GCFooter = ({ lang }) => {
                 
                 .gc-footer-wordmark {
                     flex-shrink: 0;
-                    margin-right: 100px;
+                    margin-right: 0;
                 }
                 
                 .gc-footer-wordmark img {
@@ -379,6 +380,10 @@ const GCFooter = ({ lang }) => {
                 }
                 
                 @media (max-width: 768px) {
+                    .gc-footer-container {
+                        padding: 0 20px 0 45px;
+                    }
+
                     .gc-footer-contextual ul,
                     .gc-footer-gov ul {
                         grid-template-columns: 1fr 1fr;
@@ -392,6 +397,10 @@ const GCFooter = ({ lang }) => {
                 }
                 
                 @media (max-width: 480px) {
+                    .gc-footer-container {
+                        padding: 0 10px;
+                    }
+
                     .gc-footer-contextual ul,
                     .gc-footer-gov ul,
                     .gc-footer-themes-list {
@@ -431,7 +440,7 @@ const GCFooter = ({ lang }) => {
             <div className="gc-footer-main">
                 <div className="gc-footer-container">
                     <nav aria-label={lang === 'en' ? 'Government of Canada footer links' : 'Liens de pied de page du gouvernement du Canada'}>
-                        {/* Government of Canada section - row format */}
+                        {/* Government of Canada section */}
                         <div className="gc-footer-gov">
                             <h3 aria-hidden="true">{lang === 'en' ? 'Government of Canada' : 'Gouvernement du Canada'}</h3>
                             <ul role="presentation">
@@ -446,7 +455,7 @@ const GCFooter = ({ lang }) => {
                         {/* Divider line */}
                         <div className="gc-footer-divider" aria-hidden="true"></div>
 
-                        {/* Themes and topics - 3 columns */}
+                        {/* Themes and topics */}
                         <div className="gc-footer-themes">
                             <ul className="gc-footer-themes-list" role="presentation">
                                 {themeLinks.map((link, index) => (

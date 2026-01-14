@@ -6,12 +6,12 @@ import { getText } from '../utils/translations';
 
 const Page25 = () => {
     const { lang } = useOutletContext();
-    const [year, setYear] = useState(null); // Will be set to maxYear once data loads
+    const [year, setYear] = useState(null);
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpen, setIsTableOpen] = useState(false); // Track if data table is expanded
+    const [isTableOpen, setIsTableOpen] = useState(false);
 
     const minYear = useMemo(() => pageData.length > 0 ? pageData[0].year : 2007, [pageData]);
     const maxYear = useMemo(() => pageData.length > 0 ? pageData[pageData.length - 1].year : 2024, [pageData]);
@@ -21,7 +21,6 @@ const Page25 = () => {
         (_, i) => minYear + i
     ), [minYear, maxYear]);
 
-    // Track window width for responsive chart
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
         window.addEventListener('resize', handleResize);
@@ -92,7 +91,6 @@ const Page25 = () => {
         return { values, colors, hoverTexts, total, pctDict };
     }, [currentYearData, lang]);
 
-    // Generate labels for pie chart slices
     const pieLabels = useMemo(() => {
         const transKeys = {
             'environmental': 'infra_environmental', 'fuel_energy_pipelines': 'infra_fuel_energy',
@@ -105,7 +103,6 @@ const Page25 = () => {
         });
     }, [lang]);
 
-    // Center annotation only (for TOTAL) - responsive font size
     const annotations = useMemo(() => {
         if (!chartData || !chartData.pctDict) return [];
         const totalBillions = (chartData.total || 0) / 1000;
@@ -114,7 +111,6 @@ const Page25 = () => {
             ? `<b>TOTAL</b><br><b>$${totalBillions.toFixed(0)}</b><br><b>BILLION</b>`
             : `<b>TOTAL</b><br><b>${totalBillions.toFixed(0)} $</b><br><b>MILLIARDS</b>`;
 
-        // Responsive font size to prevent overlap at all zoom levels
         let fontSize;
         if (windowWidth <= 480) {
             fontSize = 12;
@@ -146,8 +142,6 @@ const Page25 = () => {
         return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>No data available. Please refresh the page.</div>;
     }
 
-    // Build the full subtitle text for screen readers
-    // Format numbers so screen readers read them naturally
     const getSubtitleText = () => {
         if (!currentYearData) return '';
         const fuelPct = ((currentYearData['fuel_energy_pipelines'] || 0) / currentYearData.total) * 100;
@@ -182,8 +176,6 @@ const Page25 = () => {
         );
     };
 
-    // Build complete chart data as one paragraph for screen readers
-    // Format numbers so screen readers read them naturally
     const getChartDataSummary = () => {
         if (!chartData || !currentYearData) return '';
         const billionText = getText('billion', lang);
@@ -211,7 +203,6 @@ const Page25 = () => {
         return `${parts.join('. ')}. ${totalText}.`;
     };
 
-    // Build right side content as one block for screen readers
     const getRightSideText = () => {
         const title = getText('infra_definition_title', lang).replace(/\n/g, ' ');
         const quote = getText('infra_definition_text', lang).replace(/\n/g, ' ');
@@ -219,7 +210,6 @@ const Page25 = () => {
         return `${title} "${quote}" ${description}`;
     };
 
-    // Format number for screen readers using locale
     const formatNumberTable = (val) => {
         return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
             minimumFractionDigits: 1, 
@@ -227,14 +217,11 @@ const Page25 = () => {
         });
     };
 
-    // Helper to strip HTML tags from text
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
-    // Generate accessible data table with details/summary pattern (all years)
     const getAccessibleDataTable = () => {
         if (!pageData || pageData.length === 0) return null;
         
-        // Strip HTML tags from category labels
         const categoryLabels = {
             'environmental': stripHtml(getText('infra_environmental', lang)),
             'fuel_energy_pipelines': stripHtml(getText('infra_fuel_energy', lang)),
@@ -244,7 +231,9 @@ const Page25 = () => {
             'public_safety': stripHtml(getText('infra_public_safety', lang)),
         };
 
-        const unitText = lang === 'en' ? ', in billions of dollars' : ', en milliards de dollars';
+        const cellUnitSR = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
+        const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
+        const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
         const captionId = 'page25-table-caption';
         
         return (
@@ -274,82 +263,55 @@ const Page25 = () => {
                     }}
                 >
                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'View Data Table' : 'Voir le tableau de données'}
-                    <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
+                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
+                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                <div 
-                    role="region"
-                    aria-labelledby={captionId}
-                    tabIndex="0"
-                    style={{ 
-                        overflowX: 'auto',
-                        overflowY: 'visible',
-                        border: '1px solid #ccc', 
-                        borderTop: 'none',
-                        padding: '10px',
-                        maxHeight: 'none'
-                    }}
-                >
-                    <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                        <caption 
-                            id={captionId}
-                            style={{ 
-                                textAlign: 'left', 
-                                padding: '8px', 
-                                fontWeight: 'bold',
-                                backgroundColor: '#f0f0f0'
-                            }}
-                        >
+                <div className="table-responsive" role="region" aria-labelledby={captionId}>
+                    <table className="table table-striped table-hover">
+                        <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Capital expenditures on construction in infrastructure (billions of dollars)'
                                 : 'Dépenses en immobilisations pour la construction d\'infrastructures (milliards de dollars)'}
                         </caption>
                         <thead>
-                            <tr style={{ backgroundColor: '#eee' }}>
-                                <th scope="col" style={{ 
-                                    padding: '8px', 
-                                    borderBottom: '2px solid #ddd',
-                                    position: 'sticky',
-                                    left: 0,
-                                    backgroundColor: '#eee',
-                                    zIndex: 2
-                                }}>
-                                    {lang === 'en' ? 'Year' : 'Année'}
-                                </th>
+                            <tr>
+                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <th key={cat} scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd', whiteSpace: 'nowrap' }}>
-                                        {categoryLabels[cat]}
-                                        <span className="sr-only"> {unitText}</span>
-                                    </th>
+                                    <td key={cat} className="text-center fw-bold">
+                                        {categoryLabels[cat]}<br/>
+                                        <span aria-hidden="true">{headerUnitVisual}</span>
+                                        <span className="wb-inv">{headerUnitSR}</span>
+                                    </td>
                                 ))}
-                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
-                                    {lang === 'en' ? 'Total' : 'Total'}
-                                    <span className="sr-only"> {unitText}</span>
-                                </th>
+                                <td className="text-center fw-bold">
+                                    {lang === 'en' ? 'Total' : 'Total'}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </td>
                             </tr>
                         </thead>
                         <tbody>
-                            {pageData.map(yearData => (
-                                <tr key={yearData.year} style={{ borderBottom: '1px solid #eee' }}>
-                                    <th scope="row" style={{ 
-                                        padding: '8px', 
-                                        fontWeight: 'normal',
-                                        position: 'sticky',
-                                        left: 0,
-                                        backgroundColor: '#f9f9f9',
-                                        zIndex: 1
-                                    }}>
-                                        {yearData.year}
-                                    </th>
-                                    {CATEGORY_ORDER.map(cat => (
-                                        <td key={cat} style={{ padding: '8px', whiteSpace: 'nowrap' }}>
-                                            {formatNumberTable((yearData[cat] || 0) / 1000)}
+                            {pageData.map(yearData => {
+                                const yearHeaderId = `year-${yearData.year}`;
+                                return (
+                                    <tr key={yearData.year}>
+                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
+                                        {CATEGORY_ORDER.map(cat => (
+                                            <td key={cat} headers={yearHeaderId}>
+                                                <span className="wb-inv">{yearData.year}, {categoryLabels[cat]}: </span>
+                                                {formatNumberTable((yearData[cat] || 0) / 1000)}
+                                                <span className="wb-inv">{cellUnitSR}</span>
+                                            </td>
+                                        ))}
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {lang === 'en' ? 'Total' : 'Total'}: </span>
+                                            <strong>{formatNumberTable((yearData.total || 0) / 1000)}</strong>
+                                            <span className="wb-inv">{cellUnitSR}</span>
                                         </td>
-                                    ))}
-                                    <td style={{ padding: '8px', fontWeight: 'bold' }}>{formatNumberTable((yearData.total || 0) / 1000)}</td>
-                                </tr>
-                            ))}
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -371,34 +333,32 @@ const Page25 = () => {
                 flexDirection: 'column',
                 overflowX: 'hidden',
                 overflowY: 'visible',
-                borderRight: '18px solid #8e7e52', 
                 boxSizing: 'border-box',
-                marginLeft: '40px',
-                width: 'calc(100% - 40px)',
+                borderRight: '18px solid #8e7e52',
             }}
         >
-            <style>{`
-                input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-                input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #007bff; cursor: pointer; margin-top: -6px; }
-                input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #007bff; border-radius: 4px; }
-                input[type=range]:focus { outline: 2px solid #005fcc; outline-offset: 2px; }
-                input[type=range]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(0,123,255,0.5); }
-                
-                .js-plotly-plot .plotly .slice path.textline { display: none !important; }
-                .js-plotly-plot .plotly g.slice path[class*="textline"] { display: none !important; }
-                
-                .js-plotly-plot .plotly .pielayer text {
-                    paint-order: stroke fill;
-                    stroke: #000000;
-                    stroke-width: 5px;
-                    stroke-linecap: round;
-                    stroke-linejoin: round;
+           <style>{`
+                .wb-inv {
+                    clip: rect(1px, 1px, 1px, 1px);
+                    height: 1px;
+                    margin: 0;
+                    overflow: hidden;
+                    position: absolute;
+                    width: 1px;
+                    white-space: nowrap;
+                }
+  
+                .page-25 {
+                    margin-left: -37px;
+                    margin-right: -30px;
+                    width: calc(100% + 67px);
                 }
 
-                /* Dynamic Layout Classes for 200% Zoom Compliance */
+                .page25-slider-region
+
                 .page25-container {
-                    width: calc(100% - 40px);
-                    padding: 3px 8px;
+                    width: 100%;
+                    padding: 0; 
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -412,17 +372,84 @@ const Page25 = () => {
                     min-height: 0;
                     align-items: flex-start;
                 }
-                
+
+                .page25-container > header {
+                    padding-left: 0px !important; 
+                    padding-right: 48px;
+                    box-sizing: border-box;
+                }
+                .page25-container > header h1,
+                .page25-container > header p {
+                    padding-left: 54px !important;
+                }
+
+                .page25-slider-region {
+                    padding-left: 54px !important; 
+                    padding-right: 48px !important;
+                    width: calc(100% + 35px) !important;
+                    margin-left: 0px !important;
+                    margin-right: 0 !important;
+                    position: relative !important;
+                    z-index: 50 !important; 
+                }
+                .page25-slider-track { flex: 1; }
+
                 .page25-chart-column {
-                    width: 55%;
-                    height: calc(100vh - 520px);
-                    min-height: 300px;
-                    max-height: 400px;
-                    padding-left: 80px;
+                    width: 90%;
+                    height: auto !important; 
+                    min-height: 500px;
+                    max-height: none !important;
+                    padding-right: 175px;
                     position: relative;
                     margin-bottom: 20px;
                 }
-                
+
+                .page25-chart-column details {
+                    margin-left: 55px !important;
+                    margin-top: 0px !important;
+                    width: calc(100% - 100px) !important;
+                    position: relative !important;
+                    z-index: 50 !important;;
+                }
+
+                .layout-stacked {
+                    flex-direction: column !important;
+                    height: auto !important;
+                    align-items: center !important;
+                    flex: 0 0 auto !important;
+                }
+                .layout-stacked .page25-chart-column {
+                    width: 100% !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    padding-left: 80px !important;
+                    margin-bottom: 30px !important;
+                    overflow: visible !important;
+                }
+                .layout-stacked .page25-text-column {
+                    width: 100% !important;
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                    margin-top: 20px !important;
+                }
+                .layout-stacked figure {
+                    height: 500px !important;
+                    min-height: 500px !important;
+                }
+                .layout-stacked .page25-chart-column details {
+                    margin-left: -28px !important;
+                    width: calc(100% + 194px) !important;
+                }
+                .layout-stacked .page25-definition-box {
+                    margin-left: 55px !important;
+                    width: calc(100% - 68px) !important;
+                }
+
+                .page25-chart-column figure {
+                    height: 450px;
+                    min-height: 450px;
+                }
+
                 .page25-text-column {
                     width: 42%;
                     padding-left: 25px;
@@ -430,57 +457,38 @@ const Page25 = () => {
                     padding-top: 0;
                     margin-top: 0px;
                 }
-                
-                .page25-slider-track {
-                    flex: 1;
-                }
-                
+
                 .page25-definition-box {
                     position: relative;
                     background-color: #aa9c7a;
                     padding: 20px 50px;
                     border-radius: 3px;
                     width: 100%;
-                    margin-left: 0;
+                    margin-left: 8px;
                     margin-top: 10px;
                 }
-
-                /* Forced Stacked Layout when Table is Open */
-                .layout-stacked {
-                    flex-direction: column !important;
-                    height: auto !important;
-                    align-items: center !important;
-                    flex: 0 0 auto !important;
-                }
-
-                .layout-stacked .page25-chart-column {
-                    width: 100% !important;
-                    height: auto !important;
-                    max-height: none !important;
+                .page25-definition-box h2 {
+                    text-align: center !important;
                     padding-left: 0 !important;
-                    margin-bottom: 30px !important;
-                    overflow: visible !important;
                 }
 
-                .layout-stacked .page25-text-column {
-                    width: 100% !important;
-                    padding-left: 0 !important;
-                    padding-right: 0 !important;
-                    margin-top: 20px !important;
-                }
-                
-                .layout-stacked .page25-definition-box {
-                    width: 90% !important;
-                    margin-left: auto !important;
-                    margin-right: auto !important;
-                }
-                
-                .layout-stacked figure {
-                    height: 450px !important;
-                    min-height: 350px !important;
+                input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+                input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #007bff; cursor: pointer; margin-top: -6px; }
+                input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #007bff; border-radius: 4px; }
+                input[type=range]:focus { outline: 2px solid #005fcc; outline-offset: 2px; }
+                input[type=range]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(0,123,255,0.5); }
+
+                .js-plotly-plot .plotly .slice path.textline { display: none !important; }
+                .js-plotly-plot .plotly g.slice path[class*="textline"] { display: none !important; }
+                .js-plotly-plot .plotly .pielayer text {
+                    paint-order: stroke fill;
+                    stroke: #000000;
+                    stroke-width: 5px;
+                    stroke-linecap: round;
+                    stroke-linejoin: round;
                 }
 
-                /* MEDIA QUERY: When zoomed in (125%+), switch to stacked layout */
+
                 @media (max-width: 1800px) {
                     .page25-content-row {
                         flex-direction: column;
@@ -488,18 +496,20 @@ const Page25 = () => {
                         align-items: center;
                     }
 
-                    h1 {
-                        margin-top: 20px !important; 
-                        padding-top: 10px !important;
-                    }
+                    h1 { margin-top: 20px !important; }
                     
                     .page25-chart-column {
                         width: 100%;
-                        height: 400px;
-                        max-height: 400px;
-                        padding-left: 0;
-                        margin-top: 0;
+                        height: auto;
+                        min-height: 500px;
+                        max-height: none;
+                        padding-left: 80px;
                         margin-bottom: 30px;
+                    }
+                    
+                    .page25-chart-column figure {
+                        height: 480px !important;
+                        min-height: 480px !important;
                     }
                     
                     .page25-text-column {
@@ -509,172 +519,254 @@ const Page25 = () => {
                         margin-top: 20px;
                         margin-bottom: 40px;
                     }
-                    
-                    .page25-definition-box {
-                        width: 90% !important;
-                        margin-left: auto !important;
-                        margin-right: auto !important;
-                        margin-top: 40px !important;
-                    }
-                }
-                
-                /* MEDIA QUERY: At 200%+ zoom, hide year ticks on slider */
-                @media (max-width: 960px) {
-                    .page25-year-ticks {
-                        display: none !important;
-                    }
-                }
-                
 
-                /* REFLOW: At 250%+ zoom */
+                    .page25-definition-box {
+                        margin-left: 55px !important;
+                        width: calc(100% - 65px) !important;
+                        margin-right: auto !important;
+                    }
+
+                    .page25-chart-column details {
+                        margin-left: -25px !important;
+                        margin-top: 50px !important; 
+                        width: calc(100% + 190px) !important;
+                    }
+                        
+                }
+                
+                @media (max-width: 960px) {
+                    .page25-year-ticks { display: none !important; }
+                    
+                    .page25-chart-column figure {
+                        height: 520px !important;
+                        min-height: 520px !important;
+                    }
+
+                     .page25-container > header {
+                        padding-left: 45px !important; 
+                        padding-right: 30px;
+                        box-sizing: border-box;
+                    }
+                    .page25-container > header h1,
+                    .page25-container > header p {
+                        padding-left: 0px !important;
+                    }
+
+                    .page25-slider-region {
+                        padding-left: 45px !important; 
+                        padding-right: 50px !important;
+                    }
+
+                    .page25-chart-column details {
+                        margin-left: -35px !important;
+                        margin-top: -10px !important;
+                        width: calc(100% + 198px) !important;
+                    }
+
+                    .layout-stacked .page25-chart-column details {
+                        margin-left: -35px !important;
+                        width: calc(100% + 198px) !important;
+                    }
+
+                    .page25-definition-box,
+                    .layout-stacked .page25-definition-box {
+                        text-align: center !important;
+                        margin-left: 45px !important;
+                        width: calc(100% - 58px) !important;
+                    }
+
+                }
+
                 @media (max-width: 768px) {
                     .page-25 {
-                        margin-left: 0 !important;
-                        width: 100% !important;
+                        margin-left: -45px !important;
+                        margin-right: -20px !important;
+                        width: calc(100% + 65px) !important;
                         border-right: none !important;
                     }
-                    
-                    .page25-container {
-                        width: 100% !important;
-                        padding: 5px !important;
+
+                    .page25-chart-column figure { 
+                        margin-left: 50px !important;
+                        height: 600px !important; 
+                        min-height: 600px !important; 
                     }
                     
-                    .page25-container h1 {
-                        font-size: 1.8rem !important;
+                    .page25-container > header,
+                    .page25-slider-region,
+                    .page25-chart-column details {
+                        padding-left: 0;
+                        margin-left: 0px !important; 
                     }
                     
-                    .page25-container p {
-                        font-size: 1rem !important;
+                    .page25-chart-column {
+                        margin-top: -100px !important;
+                        padding-left: 0 !important;
+                        height: auto !important; 
+                        min-height: 600px !important; 
                     }
                     
-                    .page25-year-ticks {
-                        display: none !important;
-                    }
-                    
+                    .page25-chart-column details { 
+                        margin-left: 45px !important;
+                        margin-top: -50px !important;
+                        width: calc(100% + 112px) !important; 
+                    } 
+
                     .page25-slider-region {
                         flex-direction: column !important;
                         align-items: stretch !important;
+                        padding-right: 20px !important;
+                        width: calc(100% + 0px) !important;
                     }
-                    
-                    .page25-slider-label {
-                        white-space: normal !important;
-                        margin-bottom: 10px;
-                        margin-right: 0 !important;
+                    .page25-slider-label { margin-bottom: 10px; margin-right: 0 !important; }
+
+                    .layout-stacked .page25-chart-column details {
+                        margin-left: -34px !important;
+                        width: calc(100% + 190px) !important;
+                        box-sizing: border-box !important;
                     }
-                    
-                    .page25-chart-column {
-                        height: 450px !important;
+
+                     .page25-definition-box,
+                    .layout-stacked .page25-definition-box {
+                        text-align: center !important;
+                        margin-left: 45px !important;
+                        width: calc(100% - 64px) !important;
                     }
                 }
                 
-                /* REFLOW: At 400% zoom (320px width) */
-                @media (max-width: 480px) {
-                    .page25-chart-column {
+                @media (max-width: 640px) {
+                     .page-25 { 
+                        margin-left: 0 !important; 
+                        margin-right: 0 !important; 
+                        width: auto !important;
+                        padding-left: 0px; 
+                        padding-right: 10px;
+                    }
+
+                    .page25-container > header,
+                    .page25-chart-column details {
+                        margin-left: 0px !important;
+                        padding-left: 0px !important; 
                         width: 100% !important;
-                        height: 350px !important;
                     }
                     
-                    .page25-slider-region {
-                        position: relative !important;
-                        z-index: 10 !important;
-                        margin-bottom: 10px !important;
-                    }
-                    
-                    .page25-definition-box {
-                        padding: 15px 20px !important;
-                    }
-                    
-                    .page25-container h1 {
-                        font-size: 1.5rem !important;
+                    .page25-container > header h1,
+                    .page25-container > header p {
+                        padding-left: 0px !important; 
                     }
 
-                    .decorative-quote {
-                        display: none !important;
+
+                    .layout-stacked .page25-chart-column {
+                        padding-left: 0px !important;
                     }
+
+                    .page25-slider-region {
+                    flex-direction: column !important;
+                    align-items: stretch !important;
+                    padding-right: 0px !important; 
+                    margin-right: -10px !important;
+                    width: calc(100% + 8px) !important;
+                    margin-left: 0px !important;
+                    padding-left: 0px !important;
+                }
+
+                    .page25-chart-column details, .layout-stacked .page25-chart-column details {
+                        margin-left: 0px !important;
+                        margin-top: -60px !important;
+                        width: calc(100% + 185px) !important; 
+                    }
+
+                    .page25-definition-box, .layout-stacked .page25-definition-box {
+                        width: calc(100% + 185px) !important;
+                        margin-left: -100px !important;
+                        padding-left: 115px !important; 
+                        padding-right: 100px !important; 
+                        box-sizing: border-box !important;
+                        margin-top: -40px !important;
+                    }
+
+                    .page25-chart-column { width: 100% !important; height: auto !important; min-height: 580px !important; padding-left: 0 !important; margin-top: -300px !important; }
+                    .page25-chart-column figure { height: 1000px !important; min-height: 650px !important; }
+                    .decorative-quote { display: none !important; }
                     
-                    /* Ensure slider is large enough to interact with at high zoom */
-                    input[type=range] {
-                        height: 44px !important;
-                        padding: 10px 0 !important;
-                    }
-                    
-                    input[type=range]::-webkit-slider-thumb {
-                        height: 28px !important;
-                        width: 28px !important;
-                        margin-top: -10px !important;
-                    }
-                    
-                    input[type=range]::-webkit-slider-runnable-track {
-                        height: 12px !important;
-                    }
+                    input[type=range] { height: 44px !important; padding: 10px 0 !important; }
+                    input[type=range]::-webkit-slider-thumb { height: 28px !important; width: 28px !important; margin-top: -10px !important; }
+                }
                 }
                 
-                /* REFLOW: At 500% zoom (384px width) */
+                @media (max-width: 640px) {
+                     .page-25 { 
+                        margin-left: 0 !important; 
+                        margin-right: 0 !important; 
+                        width: auto !important;
+                        padding-left: 10px;
+                        padding-right: 10px;
+                    }
+
+                    .page25-container > header,
+                    .page25-slider-region,
+                    .page25-definition-box,
+                    .page25-chart-column details {
+                        margin-left: 0px !important;
+                        padding-left: 10px !important;
+                        width: 100% !important;
+                    }
+                    
+                    .page25-chart-column { width: 100% !important; height: auto !important; min-height: 650px !important; padding-left: 0 !important; }
+                    .page25-chart-column figure { height: 650px !important; min-height: 650px !important; }
+                    .decorative-quote { display: none !important; }
+                    
+                    input[type=range] { height: 44px !important; padding: 10px 0 !important; }
+                    input[type=range]::-webkit-slider-thumb { height: 28px !important; width: 28px !important; margin-top: -10px !important; }
+                }
+
+                @media (max-width: 480px) {
+                    .page25-chart-column { min-height: 700px !important; }
+                    .page25-chart-column figure { height: 1000px !important; min-height: 700px !important; width: calc(100vh + 100px) !important; }
+                    .page25-chart-column details, layout-stacked .page25-chart-column details {margin-top: -20px !important;}
+                }
+
                 @media (max-width: 384px) {
-                    .page25-chart-column {
-                        height: 350px !important;
-                        width: 110% !important;
+                    .page25-chart-column,
+                    .layout-stacked .page25-chart-column {
+                        width: 110% !important; 
                         margin-left: 7px !important;
+                        padding-left: 0px !important;
+                        padding-right: 0px !important;
+                        height: auto !important; 
+                        min-height: 750px !important; 
+                        margin-bottom: 30px !important;
+                        
+                        align-items: flex-start !important; 
                     }
-                    
-                    .page25-slider-region {
-                        position: relative !important;
-                        z-index: 10 !important;
-                        margin-bottom: 10px !important;
-                    }
-                    
-                    /* Even larger touch target for very high zoom */
-                    input[type=range] {
-                        height: 50px !important;
-                        padding: 12px 0 !important;
-                    }
-                    
-                    input[type=range]::-webkit-slider-thumb {
-                        height: 32px !important;
-                        width: 32px !important;
-                        margin-top: -12px !important;
-                    }
-                    
-                    input[type=range]::-webkit-slider-runnable-track {
-                        height: 14px !important;
-                    }
-                }
-                
-                /* Hide default disclosure triangle */
-                details summary::-webkit-details-marker,
-                details summary::marker {
-                    display: none;
-                }
 
-                /* Screen reader only table - visually hidden but accessible */
-                .sr-only-table {
-                    position: absolute;
-                    width: 1px;
-                    height: 1px;
-                    padding: 0;
-                    margin: -1px;
-                    overflow: hidden;
-                    clip: rect(0, 0, 0, 0);
-                    white-space: nowrap;
-                    border: 0;
+                    .page25-chart-column figure { 
+                        height: 925px !important; 
+                        min-height: 750px !important; 
+                    }
+
+                    .page25-chart-column details, 
+                    .layout-stacked .page25-chart-column details {
+                        margin-top: -20px !important; 
+                        
+                        margin-left: 14px !important; 
+                        
+                        width: 94vw !important; 
+                        
+                        box-sizing: border-box !important;
+                    }
+                }
+                }
+                    
+                    input[type=range] { height: 50px !important; padding: 12px 0 !important; }
+                    input[type=range]::-webkit-slider-thumb { height: 32px !important; width: 32px !important; margin-top: -12px !important; }
                 }
                 
-                .sr-only {
-                    position: absolute;
-                    width: 1px;
-                    height: 1px;
-                    padding: 0;
-                    margin: -1px;
-                    overflow: hidden;
-                    clip: rect(0, 0, 0, 0);
-                    white-space: nowrap;
-                    border: 0;
-                }
+                details summary::-webkit-details-marker, details summary::marker { display: none; }
+                .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+                .page25-table-btn-wrapper summary:focus {outline: none !important;}
             `}</style>
 
-            {/* Container */}
             <div className="page25-container">
-                {/* REGION 1: Title and Subtitle - read as one block */}
                 <header 
                     role="region" 
                     aria-label={`${getText('page25_title', lang).replace(/<br>/g, ' ')}. ${getSubtitleText()}`}
@@ -688,12 +780,11 @@ const Page25 = () => {
                     </p>
                 </header>
 
-                {/* REGION 2: Year Slider - Reduced margins to fit content at 100% zoom */}
                 <div 
                     className="page25-slider-region"
                     role="region" 
                     aria-label={`${getText('year_slider_label', lang)} ${year}. ${lang === 'en' ? 'Use arrow keys to change year from' : 'Utilisez les touches fléchées pour changer l\'année de'} ${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}.`}
-                    style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', marginTop: '5px', padding: '2px 5px' }}
+                    style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', marginTop: '5px' }}
                 >
                     <label 
                         id="slider-label"
@@ -727,7 +818,6 @@ const Page25 = () => {
                     </div>
                 </div>
 
-                {/* Live region for year changes */}
                 <div 
                     aria-live="polite" 
                     aria-atomic="true" 
@@ -736,28 +826,21 @@ const Page25 = () => {
                     {chartData && `${year}`}
                 </div>
 
-                {/* Content Row - switches from row to column when zoomed OR when table is open */}
                 <div className={`page25-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
-                    {/* REGION 3: Chart with all data read as one block */}
                     <div 
                         className="page25-chart-column"
                         role="region"
                         aria-label={`${lang === 'en' ? 'Infrastructure pie chart for' : 'Graphique circulaire des infrastructures pour'} ${year}. ${getChartDataSummary()}. ${lang === 'en' ? 'Expand the data table below for detailed values.' : 'Développez le tableau de données ci-dessous pour les valeurs détaillées.'}`}
                     >
-                        {/* Accessible data table for screen readers */}
-                        {getAccessibleDataTable()}
-                        
                         {chartData && (
-                            <figure aria-hidden="true" style={{ width: '100%', height: '100%', margin: 0 }}>
+                            <figure aria-hidden="true" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0 }}>
                                 <Plot
                                     data={[{
                                         values: chartData.values,
                                         labels: pieLabels,
-                                        // Responsive hole size - larger at narrower viewports to fit center text
                                         hole: windowWidth <= 480 ? 0.80 : windowWidth <= 768 ? 0.75 : windowWidth <= 1400 ? 0.73 : 0.70,
                                         type: 'pie',
                                         marker: { colors: chartData.colors, line: { color: 'black', width: 3 } },
-                                        // Responsive labels: use legend at narrow widths, outside labels at wider widths
                                         texttemplate: windowWidth <= 768 ? '%{percent:.0%}' : '%{label}<br>%{percent:.0%}',
                                         textinfo: windowWidth <= 768 ? 'percent' : 'label+percent',
                                         textposition: windowWidth <= 768 ? 'inside' : 'outside',
@@ -774,21 +857,33 @@ const Page25 = () => {
                                         automargin: true
                                     }]}
                                     layout={{
-                                        // Show legend at narrow widths since labels are inside/abbreviated
                                         showlegend: windowWidth <= 768,
-                                        legend: windowWidth <= 768 ? {
-                                            orientation: 'v',
-                                            y: 0.5,
-                                            x: 1.05,
-                                            xanchor: 'left',
-                                            yanchor: 'middle',
-                                            font: { size: windowWidth <= 480 ? 9 : 10 },
-                                            itemclick: false,
-                                            itemdoubleclick: false
-                                        } : undefined,
-                                        margin: windowWidth <= 768 
-                                            ? { l: 10, r: 120, t: 10, b: 10 }
-                                            : { l: 80, r: 80, t: 40, b: 40 },
+                                        legend: windowWidth <= 768 ? (
+                                            windowWidth <= 640 ? {
+                                                orientation: 'h',
+                                                y: 0.3,
+                                                x: 0.55,
+                                                xanchor: 'center',
+                                                yanchor: 'top',
+                                                font: { size: windowWidth <= 480 ? 10 : 11 },
+                                                itemclick: false,
+                                                itemdoubleclick: false
+                                            } : {
+                                                orientation: 'v',
+                                                y: 0.5,
+                                                x: 1.05,
+                                                xanchor: 'left',
+                                                yanchor: 'middle',
+                                                font: { size: 10 },
+                                                itemclick: false,
+                                                itemdoubleclick: false
+                                            }
+                                        ) : undefined,
+                                        margin: windowWidth <= 640
+                                            ? { l: 10, r: 10, t: 10, b: 10 }
+                                            : windowWidth <= 768 
+                                                ? { l: 10, r: 120, t: 10, b: 10 }
+                                                : { l: 80, r: 80, t: 40, b: 40 },
                                         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
                                         autosize: true, 
                                         annotations: annotations
@@ -799,21 +894,20 @@ const Page25 = () => {
                                 />
                             </figure>
                         )}
+                        
+                        {getAccessibleDataTable()}
                     </div>
 
-                    {/* REGION 4: Definition and description - read as one block */}
                     <aside 
                         className="page25-text-column"
                         role="region"
                         aria-label={getRightSideText()}
                     >
-                        {/* Definition box uses absolute positioning for quotes to prevent overlap */}
                         <div className="page25-definition-box" aria-hidden="true">
-                            <h2 style={{ fontSize: '1.15rem', fontWeight: 'bold', textAlign: 'center', color: '#333', margin: '0 0 15px 0', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
+                            <h2 style={{ fontSize: '1.15rem', fontWeight: 'bold', textAlign: 'center', color: '#333', margin: '0 0 15px 0px', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
                                 {getText('infra_definition_title', lang)}
                             </h2>
                             <div style={{ textAlign: 'center' }}>
-                                {/* Top Quote - hidden at narrow viewports */}
                                 <span className="decorative-quote" aria-hidden="true" style={{ 
                                     position: 'absolute',
                                     top: '-5px',
@@ -823,13 +917,12 @@ const Page25 = () => {
                                     fontFamily: 'Georgia, serif', 
                                     lineHeight: '1',
                                     pointerEvents: 'none'
-                                }}>❝</span>
+                                }}>❞</span>
                                 
                                 <p style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.6', whiteSpace: 'pre-line', textAlign: 'center', margin: 0, padding: '0 10px' }}>
                                     {getText('infra_definition_text', lang)}
                                 </p>
                                 
-                                {/* Bottom Quote - hidden at narrow viewports */}
                                 <span className="decorative-quote" aria-hidden="true" style={{ 
                                     position: 'absolute',
                                     bottom: '-35px',

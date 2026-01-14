@@ -332,96 +332,40 @@ const accessibleStrings = getAccessibleStrings();
                     }}
                 >
                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'View Data Table' : 'Voir le tableau de données'}
-                    <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
+                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
+                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                {/* VISIBLE CAPTION - MOVED OUTSIDE TABLE TO ALLOW WRAPPING */}
-                <div 
-                    id={captionId}
-                    style={{ 
-                        textAlign: 'left', 
-                        padding: '10px', 
-                        fontWeight: 'bold',
-                        backgroundColor: '#f0f0f0',
-                        border: '1px solid #ccc',
-                        borderBottom: 'none',
-                        marginTop: '5px'
-                    }}
-                >
-                    {lang === 'en' 
-                        ? 'Oil and gas extraction expenditures per environmental activity (millions of dollars)'
-                        : "Dépenses d'extraction de pétrole et de gaz par activité environnementale (millions de dollars)"}
-                </div>
-
-                <div 
-                    role="region"
-                    aria-labelledby={captionId}
-                    tabIndex="0"
-                    style={{ 
-                        overflowX: 'auto',
-                        overflowY: 'visible',
-                        border: '1px solid #ccc', 
-                        padding: '0', 
-                        maxHeight: 'none'
-                    }}
-                >
-                    <table style={{ width: '100%', minWidth: windowWidth <= 480 ? '100%' : '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                <div className="table-responsive" style={{ marginTop: '10px' }}>
+                    <table className="table table-striped table-hover">
+                        <caption id={captionId} className="wb-inv">
+                            {lang === 'en' 
+                                ? 'Oil and gas extraction expenditures per environmental activity (millions of dollars)'
+                                : "Dépenses d'extraction de pétrole et de gaz par activité environnementale (millions de dollars)"}
+                        </caption>
                         <thead>
-                            <tr style={{ backgroundColor: '#eee' }}>
-                                <th scope="col" style={{ 
-                                    padding: '8px', 
-                                    borderBottom: '2px solid #ddd',
-                                    position: 'sticky',
-                                    left: 0,
-                                    backgroundColor: '#eee',
-                                    zIndex: 2
-                                }}>
-                                    {lang === 'en' ? 'Year' : 'Année'}
-                                </th>
+                            <tr>
+                                <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <th key={cat} scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
+                                    <th key={cat} scope="col">
                                         {categoryLabels[cat]}
+                                        <span className="wb-inv">{lang === 'en' ? ', millions of dollars' : ', millions de dollars'}</span>
                                     </th>
                                 ))}
-                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
+                                <th scope="col">
                                     {getText('total', lang)}
+                                    <span className="wb-inv">{lang === 'en' ? ', millions of dollars' : ', millions de dollars'}</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => (
-                                <tr key={yearData.year} style={{ borderBottom: '1px solid #eee' }}>
-                                    <th scope="row" style={{ 
-                                        padding: '8px', 
-                                        fontWeight: 'normal',
-                                        position: 'sticky',
-                                        left: 0,
-                                        backgroundColor: '#f9f9f9',
-                                        zIndex: 1
-                                    }}>
-                                        {yearData.year}
-                                    </th>
-                                    
+                                <tr key={yearData.year}>
+                                    <th scope="row">{yearData.year}</th>
                                     {CATEGORY_ORDER.map(cat => (
-                                        <td key={cat} style={{ padding: '8px' }}>
-                                            <span aria-hidden="true">
-                                                {formatNumberTable(yearData[catMapping[cat]] || 0)}
-                                            </span>
-                                            <span className="sr-only">
-                                                {formatNumberTable(yearData[catMapping[cat]] || 0)} {getText('page37_million', lang)}
-                                            </span>
-                                        </td>
+                                        <td key={cat}>{formatNumberTable(yearData[catMapping[cat]] || 0)}</td>
                                     ))}
-                                    
-                                    <td style={{ padding: '8px', fontWeight: 'bold' }}>
-                                        <span aria-hidden="true">
-                                            {formatNumberTable(yearData.oil_gas_total || 0)}
-                                        </span>
-                                        <span className="sr-only">
-                                            {formatNumberTable(yearData.oil_gas_total || 0)} {getText('page37_million', lang)}
-                                        </span>
-                                    </td>
+                                    <td><strong>{formatNumberTable(yearData.oil_gas_total || 0)}</strong></td>
                                 </tr>
                             ))}
                         </tbody>
@@ -465,27 +409,31 @@ const accessibleStrings = getAccessibleStrings();
             }}
         >
             <style>{`
+                .page-37 {
+                    margin-left: -37px;
+                    margin-right: -30px;
+                    width: calc(100% + 67px);
+                }
+
+                .wb-inv {
+                    clip: rect(1px, 1px, 1px, 1px);
+                    height: 1px;
+                    margin: 0;
+                    overflow: hidden;
+                    position: absolute;
+                    width: 1px;
+                }
+
                 input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
                 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #007bff; cursor: pointer; margin-top: -6px; }
                 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #007bff; border-radius: 4px; }
                 input[type=range]:focus { outline: 2px solid #005fcc; outline-offset: 2px; }
                 input[type=range]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(0,123,255,0.5); }
             
-                .sr-only {
-                    position: absolute;
-                    width: 1px;
-                    height: 1px;
-                    padding: 0;
-                    margin: -1px;
-                    overflow: hidden;
-                    clip: rect(0, 0, 0, 0);
-                    white-space: nowrap;
-                    border: 0;
-                }
 
                 .page37-container {
-                    width: calc(100% - 40px);
-                    padding: 15px 20px;
+                    width: 100%;
+                    padding: 15px 30px 20px 55px;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -654,11 +602,13 @@ const accessibleStrings = getAccessibleStrings();
                 /* 250% zoom */
                 @media (max-width: 768px) {
                     .page-37 {
+                        margin-left: -20px !important;
+                        margin-right: -20px !important;
+                        width: calc(100% + 40px) !important;
                         border-right: none !important;
                     }
                     .page37-container {
-                        width: 100% !important;
-                        padding: 5px 10px !important;
+                        padding: 8px 20px 8px 45px !important;
                     }
                     .page37-title {
                         font-size: 1.5rem !important;
@@ -729,7 +679,7 @@ const accessibleStrings = getAccessibleStrings();
                                 className="page37-subtitle"
                                 tabIndex="0"
                             >
-                                <span className="sr-only">{accessibleStrings.subtitle}</span>
+                                <span className="wb-inv">{accessibleStrings.subtitle}</span>
                                 <span aria-hidden="true">
                                     {getText('page37_subtitle_part1', lang)}
                                     <span className="visual-bold">{formatNumber(dynamicValues.energySectorTotal)}</span>
@@ -746,7 +696,7 @@ const accessibleStrings = getAccessibleStrings();
                                 className="page37-text"
                                 tabIndex="0"
                             >
-                                <span className="sr-only">{accessibleStrings.text}</span>
+                                <span className="wb-inv">{accessibleStrings.text}</span>
                                 <span aria-hidden="true">
                                     {getText('page37_text_part1', lang)}
                                     <span className="visual-bold">{formatNumber(dynamicValues.oilGasTotal)}</span>
@@ -802,7 +752,7 @@ const accessibleStrings = getAccessibleStrings();
                 <div 
                     aria-live="polite" 
                     aria-atomic="true" 
-                    className="sr-only"
+                    className="wb-inv"
                 >
                     {chartData && `${year}`}
                 </div>
@@ -817,9 +767,6 @@ const accessibleStrings = getAccessibleStrings();
                             <br />
                             ({year}, {getText('page37_chart_subtitle', lang)})
                         </h2>
-
-                        {/* Accessible data table - shown here at zoomed layouts OR when table is open */}
-                        {(windowWidth <= 1745 || isTableOpen) && getAccessibleDataTable()}
 
                         {chartData && (
                             <div 
@@ -896,12 +843,12 @@ const accessibleStrings = getAccessibleStrings();
                                 </figure>
                             </div>
                         )}
+                        
+                        {getAccessibleDataTable()}
                     </div>
 
                     {/* Text Column with Bullet Points */}
                     <div className="page37-text-column">
-                        {/* Accessible data table - shown here at 100% zoom (>1745px) only when closed */}
-                        {windowWidth > 1745 && !isTableOpen && getAccessibleDataTable()}
                         
                         {dynamicValues && (
                             <ul className="page37-bullets" role="list">
@@ -937,5 +884,3 @@ const accessibleStrings = getAccessibleStrings();
 };
 
 export default Page37;
-
-

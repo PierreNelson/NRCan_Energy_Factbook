@@ -5,17 +5,16 @@ import { getText } from '../utils/translations';
 
 const Page26 = () => {
     const { lang } = useOutletContext();
-    const [year, setYear] = useState(null); // Will be set to maxYear once data loads
+    const [year, setYear] = useState(null);
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isTableOpen, setIsTableOpen] = useState(false);
 
-    // Load data on mount
     useEffect(() => {
         getEconomicContributionsData()
             .then(data => {
                 setPageData(data);
-                // Set initial year to the latest year in the data
                 if (data && data.length > 0) {
                     setYear(data[data.length - 1].year);
                 }
@@ -32,13 +31,11 @@ const Page26 = () => {
     const minYear = pageData.length > 0 ? pageData[0].year : 2007;
     const maxYear = pageData.length > 0 ? pageData[pageData.length - 1].year : 2024;
     
-    // Create an array of years for the slider labels (e.g., 2007, 2008... 2024)
     const yearsList = Array.from(
         { length: maxYear - minYear + 1 }, 
         (_, i) => minYear + i
     );
 
-    // Colors
     const COLORS = {
         title: '#58585a',
         jobs: '#82734A',
@@ -52,7 +49,6 @@ const Page26 = () => {
         return pageData.find(d => d.year === year) || pageData[pageData.length - 1];
     }, [year, pageData]);
 
-    // Visual formatting (with $ symbol)
     const formatJobs = (val) => `${(val / 1000).toFixed(1)} k`;
 
     const formatBillions = (val) => {
@@ -61,7 +57,6 @@ const Page26 = () => {
         return lang === 'en' ? `$${b.toFixed(1)} ${text}` : `${b.toFixed(1)} $ ${text}`;
     };
 
-    // Screen reader formatting (no $ symbol for natural reading)
     const formatJobsSR = (val) => {
         const k = (val / 1000).toFixed(1);
         return lang === 'en' ? `${k} thousand jobs` : `${k} mille emplois`;
@@ -71,6 +66,137 @@ const Page26 = () => {
         const b = (val / 1000).toFixed(1);
         const text = getText('billion', lang);
         return `${b} ${text} ${lang === 'en' ? 'dollars' : 'dollars'}`;
+    };
+
+    const formatNumberTable = (val) => {
+        return (val / 1000).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
+            minimumFractionDigits: 1, 
+            maximumFractionDigits: 1 
+        });
+    };
+
+    const formatJobsTable = (val) => {
+        return (val / 1000).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
+            minimumFractionDigits: 1, 
+            maximumFractionDigits: 1 
+        });
+    };
+
+    const getAccessibleDataTable = () => {
+        if (!pageData || pageData.length === 0) return null;
+        
+        const captionId = 'page26-table-caption';
+        
+        return (
+            <details 
+                onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
+                style={{ 
+                    marginTop: '10px', 
+                    marginBottom: '10px', 
+                    width: '100%', 
+                    minWidth: '300px',
+                    marginLeft: '0',
+                    marginRight: 'auto',
+                    fontFamily: 'Arial, sans-serif',
+                    position: 'relative',
+                    zIndex: 2,
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderRadius: '4px'
+                }}
+            >
+                <summary 
+                    role="button"
+                    aria-expanded={isTableOpen}
+                    style={{ 
+                        cursor: 'pointer', 
+                        color: '#333', 
+                        fontWeight: 'bold', 
+                        padding: '10px',
+                        border: '1px solid #ccc',
+                        backgroundColor: '#f9f9f9',
+                        borderRadius: '4px',
+                        listStyle: 'none'
+                    }}
+                >
+                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
+                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
+                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
+                </summary>
+
+                <div className="table-responsive" role="region" aria-labelledby={captionId}>
+                    <table className="table table-striped table-hover">
+                        <caption id={captionId} className="wb-inv">
+                            {lang === 'en' 
+                                ? 'Economic contributions of fuel, energy and pipeline infrastructure'
+                                : 'Contributions économiques des infrastructures de carburant, d\'énergie et de pipelines'}
+                        </caption>
+                        <thead>
+                            <tr>
+                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
+                                <td className="text-center fw-bold">
+                                    {lang === 'en' ? 'Jobs' : 'Emplois'}<br/>
+                                    <span aria-hidden="true">{lang === 'en' ? '(thousands)' : '(milliers)'}</span>
+                                    <span className="wb-inv">{lang === 'en' ? '(thousands)' : '(milliers)'}</span>
+                                </td>
+                                <td className="text-center fw-bold">
+                                    {lang === 'en' ? 'Employment income' : 'Revenu d\'emploi'}<br/>
+                                    <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
+                                    <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
+                                </td>
+                                <td className="text-center fw-bold">
+                                    {lang === 'en' ? 'GDP' : 'PIB'}<br/>
+                                    <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
+                                    <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
+                                </td>
+                                <td className="text-center fw-bold">
+                                    {lang === 'en' ? 'Investment' : 'Investissement'}<br/>
+                                    <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
+                                    <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pageData.map(yearData => {
+                                const yearHeaderId = `year-${yearData.year}`;
+                                const jobsLabel = lang === 'en' ? 'Jobs' : 'Emplois';
+                                const incomeLabel = lang === 'en' ? 'Employment income' : 'Revenu d\'emploi';
+                                const gdpLabel = lang === 'en' ? 'GDP' : 'PIB';
+                                const investLabel = lang === 'en' ? 'Investment' : 'Investissement';
+                                const jobsUnit = lang === 'en' ? ' thousand jobs' : ' mille emplois';
+                                const billionUnit = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
+                                
+                                return (
+                                    <tr key={yearData.year}>
+                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
+                                        
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {jobsLabel}: </span>
+                                            {formatJobsTable(yearData.jobs)}
+                                            <span className="wb-inv">{jobsUnit}</span>
+                                        </td>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {incomeLabel}: </span>
+                                            {formatNumberTable(yearData.employment_income)}
+                                            <span className="wb-inv">{billionUnit}</span>
+                                        </td>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {gdpLabel}: </span>
+                                            {formatNumberTable(yearData.gdp)}
+                                            <span className="wb-inv">{billionUnit}</span>
+                                        </td>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {investLabel}: </span>
+                                            {formatNumberTable(yearData.investment_value)}
+                                            <span className="wb-inv">{billionUnit}</span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        );
     };
 
     if (loading) {
@@ -85,17 +211,12 @@ const Page26 = () => {
         return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>No data available. Please refresh the page.</div>;
     }
 
-    // Investment value comes from the pre-calculated data
     const investmentValue = currentYearData.investment_value;
 
-    // ===== ACCESSIBILITY: Build screen reader text blocks =====
-    
-    // Title for screen readers
     const getTitleText = () => {
         return getText('page26_title', lang);
     };
 
-    // Slider region text
     const getSliderText = () => {
         if (lang === 'en') {
             return `${getText('year_slider_label', lang)} ${year}. Use arrow keys to change year from ${minYear} to ${maxYear}.`;
@@ -104,7 +225,6 @@ const Page26 = () => {
         }
     };
 
-    // Statistics summary for screen readers
     const getStatsSummary = () => {
         const jobsText = formatJobsSR(currentYearData.jobs);
         const incomeText = formatBillionsSR(currentYearData.employment_income);
@@ -117,7 +237,6 @@ const Page26 = () => {
         }
     };
 
-    // Footer text for screen readers
     const getFooterText = () => {
         const investmentText = formatBillionsSR(investmentValue);
         if (lang === 'en') {
@@ -143,8 +262,23 @@ const Page26 = () => {
                 borderLeft: `18px solid ${COLORS.border}`,
             }}
         >
-            {/* Dynamic Layout CSS with Media Queries for 200% Zoom Compliance */}
             <style>{`
+                .wb-inv {
+                    clip: rect(1px, 1px, 1px, 1px);
+                    height: 1px;
+                    margin: 0;
+                    overflow: hidden;
+                    position: absolute;
+                    width: 1px;
+                    white-space: nowrap;
+                }
+
+                .page-26 {
+                    margin-left: -37px;
+                    margin-right: -30px;
+                    width: calc(100% + 67px);
+                }
+                
                 input[type=range] {
                     -webkit-appearance: none;
                     width: 100%;
@@ -174,10 +308,10 @@ const Page26 = () => {
                     box-shadow: 0 0 0 3px rgba(0,123,255,0.5);
                 }
 
-                /* Dynamic Layout Classes */
                 .page26-container {
-                    width: calc(100% - 40px);
+                    width: 100%;
                     min-height: calc(100vh - 300px);
+                    padding: 0 30px 0 37px;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -189,10 +323,9 @@ const Page26 = () => {
                 
                 .page26-content {
                     position: relative;
-                    flex: 1;
                     display: flex;
                     flex-direction: column;
-                    min-height: 0;
+                    min-height: 450px;
                     width: 100%;
                 }
                 
@@ -214,9 +347,9 @@ const Page26 = () => {
                     border-radius: 6px;
                 }
                 
-                .page26-stat-col-1 { margin-left: 100px; }
-                .page26-stat-col-2 { margin-left: 350px; }
-                .page26-stat-col-3 { margin-left: 450px; }
+                .page26-stat-col-1 { margin-left: -40px; }
+                .page26-stat-col-2 { margin-left: 360px; }
+                .page26-stat-col-3 { margin-left: 360px; }
                 
                 .page26-stat-value {
                     font-size: 36px;
@@ -228,11 +361,9 @@ const Page26 = () => {
                     font-size: 20px;
                 }
 
-                /* MEDIA QUERY: When zoomed in (110%+), switch to stacked layout */
                 @media (max-width: 1800px) {
                     .page26-container {
                         height: auto;
-                        min-height: 100vh;
                     }
                     h1 {
                         margin-top: 20px !important; 
@@ -245,7 +376,7 @@ const Page26 = () => {
                     }
                     
                     .page26-stat-col {
-                        margin-left: 0 !important;
+                        margin-left: -40px !important;
                         padding: 12px 16px;
                         background: rgba(255, 255, 255, 0.95);
                         border-radius: 6px;
@@ -260,20 +391,64 @@ const Page26 = () => {
                         font-size: 16px;
                     }
                 }
+
+                @media (max-width: 1280px) {
+                    .page-26 {
+                        border-left: none !important;
+                        padding-left: 18px !important;
+                    }
+                }            
                 
-                /* REFLOW: At 175%+ zoom - shift background image to the right */
                 @media (max-width: 1097px) {
                     .page26-bg-image {
                         background-size: 80% 100% !important;
                         background-position: right !important;
                     }
                 }
-                
-                /* REFLOW: At 250%+ zoom - hide year ticks, stack slider, shift background image to the right */
-                @media (max-width: 768px) {
-                    .page26-year-ticks {
-                        display: none !important;
+
+                @media (max-width: 960px) {
+                    .page26-container {
+                        padding-left: 27px !important;
                     }
+                }
+                
+                @media (max-width: 768px) {
+                    .page-26 {
+                        margin-left: -20px !important;
+                        margin-right: 0px !important; 
+                        width: calc(100% + 36px) !important;
+                        border-left-width: 10px !important;
+                    }
+                    
+                    .page26-container {
+                        padding-left: 15px !important; 
+                        padding-right: 15px !important;
+                    }
+                    
+                    .page26-container > header {
+                        margin-left: 0px !important;
+                        padding-left: 0px !important;
+                    }
+
+                    .page26-stats-row {
+                        padding-left: 0px !important;
+                        margin-left: 0px !important;
+                    }
+                    
+                    .page26-stat-col {
+                        margin-left: 0px !important;
+                    }
+
+                    .page26-content > div[style*="padding"] {
+                        padding-left: 0px !important;
+                    }
+
+                    footer {
+                        padding-left: 0px !important;
+                        margin-left: 0px !important;
+                    }
+
+                    .page26-year-ticks { display: none !important; }
 
                     .page26-bg-image {
                         background-size: 70% 100% !important;
@@ -291,13 +466,63 @@ const Page26 = () => {
                         margin-right: 0 !important;
                     }
                 }
-                
-                /* REFLOW: At 400% zoom -hide background image*/
-                @media (max-width: 480px) {
+
+                @media (max-width: 640px) {
                     .page-26 {
-                        border-left: none !important;
+                        margin-left: -34px !important;
+                        margin-right: 0px !important;
+                        width: calc(100% + 50px) !important;
+                        
+                        border-left-width: 10px !important;
                     }
 
+                    .page26-container {
+                        padding-left: 15px !important;
+                        padding-right: 15px !important;
+                    }
+
+                    .page26-container > header {
+                        margin-left: 0px !important;
+                        padding-left: 0px !important;
+                    }
+
+                    .page26-stats-row {
+                        padding-left: 0px !important;
+                        margin-left: -15px !important;
+                    }
+                    .page26-stat-col {
+                        margin-left: 0px !important;
+                    }
+
+                    .page26-content > div[style*="padding"] {
+                        padding-left: 0px !important;
+                    }
+
+                    footer {
+                        padding-left: 0px !important;
+                        margin-left: 0px !important;
+                    }
+
+                    .page26-year-ticks { display: none !important; }
+
+                    .page26-bg-image {
+                        background-size: 70% 100% !important;
+                        background-position: right !important;
+                    }
+
+                    .page26-slider-region {
+                        flex-direction: column !important;
+                        align-items: stretch !important;
+                    }
+
+                    .page26-slider-label {
+                        white-space: normal !important;
+                        margin-bottom: 10px;
+                        margin-right: 0 !important;
+                    }
+                }
+                
+                @media (max-width: 480px) {
                     .page26-bg-image {
                         display: none !important;
                     }
@@ -319,7 +544,15 @@ const Page26 = () => {
                         font-size: 1.5rem !important;
                     }
                     
-                    /* Ensure slider is large enough to interact with at high zoom */
+                    .page26-content {
+                        display: block !important;
+                        min-height: auto !important;
+                    }
+
+                    .page26-data-table-wrapper {
+                        margin-top: 20px !important;
+                    }
+
                     input[type=range] {
                         height: 44px !important;
                         padding: 10px 0 !important;
@@ -334,11 +567,10 @@ const Page26 = () => {
                     input[type=range]::-webkit-slider-runnable-track {
                         height: 12px !important;
                     }
+
                 }
                 
-                /* REFLOW: At 500% zoom */
                 @media (max-width: 384px) {
-                    /* Even larger touch target for very high zoom */
                     input[type=range] {
                         height: 50px !important;
                         padding: 12px 0 !important;
@@ -355,15 +587,30 @@ const Page26 = () => {
                     }
                 }
 
+                details summary::-webkit-details-marker,
+                details summary::marker {
+                    display: none;
+                }
+
+                .sr-only {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    padding: 0;
+                    margin: -1px;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
+                    border: 0;
+                }
+
             `}</style>
 
-            {/* Container */}
             <div className="page26-container">
-                {/* REGION 1: Title */}
                 <header 
                     role="region"
                     aria-label={getTitleText()}
-                    style={{ flexShrink: 0, padding: '15px 25px 0 25px' }}
+                    style={{ flexShrink: 0, padding: '15px 0px 0 0px'}}
                 >
                     <h1 aria-hidden="true" style={{
                         color: COLORS.title,
@@ -371,13 +618,11 @@ const Page26 = () => {
                         fontWeight: 'bold',
                         fontFamily: 'Arial, sans-serif',
                         marginBottom: '10px',
-                        marginTop: '0px',
-                        textTransform: 'uppercase'
+                        marginTop: '0px'
                     }}>
                         {getText('page26_title', lang)}
                     </h1>
 
-                    {/* REGION 2: Year Slider */}
                     <div 
                         className="page26-slider-region"
                         role="region"
@@ -411,7 +656,6 @@ const Page26 = () => {
                                 aria-valuenow={year}
                                 aria-valuetext={`${year}`}
                             />
-                            {/* Year tick labels - decorative, hidden at 400% zoom for reflow compliance */}
                             <div className="page26-year-ticks" aria-hidden="true" style={{ 
                                 display: 'flex', 
                                 justifyContent: 'space-between', 
@@ -430,9 +674,7 @@ const Page26 = () => {
                     </div>
                 </header>
 
-                {/* Main Content Area */}
                 <div className="page26-content">
-                    {/* Background Image - decorative */}
                     <div className="page26-bg-image" aria-hidden="true" style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         backgroundImage: `url(${import.meta.env.BASE_URL}assets/page26image.png)`,
@@ -442,13 +684,11 @@ const Page26 = () => {
                         zIndex: 0
                     }} />
 
-                    {/* REGION 3: Statistics - all data read as one block */}
                     <section 
                         className="page26-stats-row"
                         role="region"
                         aria-label={getStatsSummary()}
                     >
-                        {/* Column 1: Jobs */}
                         <div className="page26-stat-col page26-stat-col-1" aria-hidden="true">
                             <div className="page26-stat-label" style={{ fontWeight: 'bold', color: '#333' }}>{getText('page26_supported', lang)}</div>
                             <div className="page26-stat-value" style={{ color: COLORS.jobs }}>
@@ -457,7 +697,6 @@ const Page26 = () => {
                             <div className="page26-stat-label" style={{ color: '#666' }}>{getText('page26_jobs', lang)}</div>
                         </div>
 
-                        {/* Column 2: Income */}
                         <div className="page26-stat-col page26-stat-col-2" aria-hidden="true">
                             <div className="page26-stat-label" style={{ fontWeight: 'bold', color: '#333' }}>{getText('page26_generated', lang)}</div>
                             <div className="page26-stat-value" style={{ color: COLORS.income }}>
@@ -466,7 +705,6 @@ const Page26 = () => {
                             <div className="page26-stat-label" style={{ color: '#333' }}>{getText('page26_in_employment_income', lang)}</div>
                         </div>
 
-                        {/* Column 3: GDP */}
                         <div className="page26-stat-col page26-stat-col-3" aria-hidden="true">
                             <div className="page26-stat-label" style={{ fontWeight: 'bold', color: '#333' }}>{getText('page26_and', lang)}</div>
                             <div className="page26-stat-value" style={{ color: COLORS.gdp }}>
@@ -481,33 +719,39 @@ const Page26 = () => {
                             </div>
                         </div>
                     </section>
-
-                    {/* Spacer to push footer to bottom */}
-                    <div style={{ flex: 1 }} />
-
-                    {/* REGION 4: Footer */}
-                    <footer 
-                        role="region"
-                        aria-label={getFooterText()}
-                        style={{ 
-                            position: 'relative',
-                            zIndex: 1,
-                            padding: '10px 25px',
-                            backgroundColor: 'rgba(255,255,255,0.9)',
-                            marginBottom: '0px'
-                        }}
-                    >
-                        <p aria-hidden="true" style={{ fontSize: '16px', margin: '0', fontFamily: 'Arial, sans-serif', color: '#555' }}>
-                            <span>{getText('page26_footer_part1', lang)}</span>
-                            <span style={{ fontWeight: 'bold' }}> {year} </span>
-                            <span>{getText('page26_footer_part2', lang)} </span>
-                            <span style={{ color: '#544B30', fontWeight: 'bold', fontSize: '20px' }}>
-                                {formatBillions(investmentValue)}
-                            </span>
-                            <span> {getText('page26_footer_part3', lang)}</span>
-                        </p>
-                    </footer>
                 </div>
+
+                <div className="page26-data-table-wrapper" style={{ 
+                    position: 'relative', 
+                    zIndex: 2, 
+                    marginTop: '20px',
+                    marginBottom: '20px'
+                }}>
+                    {getAccessibleDataTable()}
+                </div>
+
+                <footer 
+                    role="region"
+                    aria-label={getFooterText()}
+                    style={{ 
+                        position: 'relative',
+                        zIndex: 1,
+                        padding: '10px 0px',
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        marginBottom: '0px',
+                        marginTop: '0px'
+                    }}
+                >
+                    <p aria-hidden="true" style={{ fontSize: '16px', margin: '0', fontFamily: 'Arial, sans-serif', color: '#555' }}>
+                        <span>{getText('page26_footer_part1', lang)}</span>
+                        <span style={{ fontWeight: 'bold' }}> {year} </span>
+                        <span>{getText('page26_footer_part2', lang)} </span>
+                        <span style={{ color: '#544B30', fontWeight: 'bold', fontSize: '20px' }}>
+                            {formatBillions(investmentValue)}
+                        </span>
+                        <span> {getText('page26_footer_part3', lang)}</span>
+                    </p>
+                </footer>
             </div>
         </main>
     );

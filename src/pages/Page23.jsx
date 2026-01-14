@@ -1,14 +1,12 @@
 import React, { useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
-// Import data loader to prefetch and warm up cache
 import { getCapitalExpendituresData, getInfrastructureData, getEconomicContributionsData } from '../utils/dataLoader';
 import page23Image from '../assets/page23_bg.jpg';
 
 const Page23 = () => {
     const { lang } = useOutletContext();
 
-    // Prefetch data and code in the background while user views this page
     useEffect(() => {
         getCapitalExpendituresData();
         getInfrastructureData();
@@ -16,25 +14,12 @@ const Page23 = () => {
         import('./Page24');
     }, []);
 
-    // Build screen reader text for the title
-    const getTitleText = () => {
-        return `${getText('page23_section', lang)} ${getText('page23_title', lang)}`;
-    };
-
-    // Build screen reader text for the list items
-    const getListItemsText = () => {
-        const items = [1, 2, 3, 4, 5, 6].map(num => getText(`page23_item${num}`, lang));
-        const prefix = lang === 'en' ? 'This section covers:' : 'Cette section couvre:';
-        return `${prefix} ${items.join('. ')}.`;
-    };
-
     return (
         <main 
             id="main-content"
             tabIndex="-1"
             className="page-content page-23 page23-main" 
             role="main"
-            aria-label={getTitleText()}
             style={{
                 backgroundColor: '#8a7d5a',
                 flex: '1 1 auto',
@@ -45,6 +30,9 @@ const Page23 = () => {
             <style>{`
 .page23-main {
     overflow: visible;
+    margin-left: -37px;
+    margin-right: -30px;
+    width: calc(100% + 67px);
 }
 
 .page23-container {
@@ -92,7 +80,7 @@ const Page23 = () => {
 
 .page23-title-box {
     background-color: rgba(255, 255, 255, 0.7); 
-    padding: 20px 40px;
+    padding: 20px 30px 20px 55px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -100,7 +88,7 @@ const Page23 = () => {
 .page23-list {
     width: 100%;
     background-color: #8a7d5a;
-    padding: 30px 40px;
+    padding: 30px 30px 30px 55px;
     box-sizing: border-box;
     flex: 1;
 }
@@ -112,131 +100,77 @@ const Page23 = () => {
     display: block;
     line-height: 1.15;
     text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+    text-align: left;
 }
 
 .page23-list-item {
     margin-bottom: 8px;
     font-size: 2.2rem;
+    text-align: left;
 }
 
-/* 110% Zoom (~1745px) */
-@media (max-width: 1745px) {
-    .page23-image-title-wrapper {
-        min-height: 310px;
-    }
-    .page23-title-text {
-        font-size: 4.2rem;
-    }
-    .page23-list-item {
-        font-size: 2.1rem;
-    }
-}
-
-/* 125% Zoom (~1536px) */
-@media (max-width: 1536px) {
-    .page23-image-title-wrapper {
-        min-height: 300px;
-    }
-    .page23-title-text {
-        font-size: 4.0rem;
-    }
-    .page23-list-item {
-        font-size: 2.0rem;
-    }
-}
-
-/* 150% Zoom (~1280px) */
-@media (max-width: 1280px) {
-    .page23-image-title-wrapper {
-        min-height: 280px;
-    }
-    .page23-title-text {
-        font-size: 3.8rem;
-    }
-    .page23-list-item {
-        font-size: 1.9rem;
-    }
-}
-
-/* 175% Zoom (~1100px) */
-@media (max-width: 1100px) {
-    .page23-image-title-wrapper {
-        min-height: 260px;
-    }
-    .page23-title-text {
-        font-size: 3.5rem;
-    }
-    .page23-list-item {
-        font-size: 1.8rem;
-    }
-}
-
-/* 200% Zoom (~960px) */
 @media (max-width: 960px) {
-    .page23-image-title-wrapper {
-        min-height: 240px;
-    }
-    .page23-title-text {
-        font-size: 3.2rem;
-    }
-    .page23-list-item {
-        font-size: 1.7rem;
+    .page23-main {
+        margin-left: -45px;
+        margin-right: -30px;
+        width: calc(100% + 75px);
     }
     .page23-title-box, .page23-list {
-        padding: 20px 30px;
+        padding: 20px 30px 20px 55px;
+    }
+
+    .page23-image-title-wrapper { min-height: 240px; }
+    .page23-title-text { font-size: 3.2rem; }
+    .page23-list-item { font-size: 1.7rem; }
+}
+
+@media (max-width: 768px) {
+    .page23-main {
+        margin-left: -45px;
+        margin-right: -20px;
+        width: calc(100% + 65px);
+    }
+    .page23-title-box, .page23-list {
+        padding-left: 45px;
+        padding-right: 20px;
     }
 }
 
-/* 300% Zoom (~640px) */
-@media (max-width: 640px) {
-    .page23-image-title-wrapper {
-        min-height: 200px;
-    }
-    .page23-title-text {
-        font-size: 2.5rem;
-    }
-    .page23-list-item {
-        font-size: 1.5rem;
-    }
-    .page23-title-box, .page23-list {
-        padding: 15px 20px;
-    }
-}
-
-/* 400% Zoom (~480px) */
 @media (max-width: 480px) {
-    .page23-image-title-wrapper {
-        min-height: 180px;
+    .page23-main {
+        margin-left: -10px;
+        margin-right: -10px;
+        width: calc(100% + 20px);
     }
-    .page23-title-text {
-        font-size: 2.0rem;
+    
+    .page23-title-box, .page23-list {
+        padding-left: 10px;
+        padding-right: 10px;
     }
-    .page23-list-item {
-        font-size: 1.3rem;
-    }
+
+    .page23-image-title-wrapper { min-height: 180px; }
+    .page23-title-text { font-size: 2.0rem; }
+    .page23-list-item { font-size: 1.3rem; }
 }
 
-/* 500% Zoom (~384px) */
 @media (max-width: 384px) {
-    .page23-image-title-wrapper {
-        min-height: 160px;
-    }
-    .page23-title-text {
-        font-size: 1.8rem;
-    }
-    .page23-list-item {
-        font-size: 1.2rem;
-    }
-    .page23-container {
-        min-height: 100vh;
-    }
+    .page23-image-title-wrapper { min-height: 160px; }
+    .page23-title-text { font-size: 1.8rem; }
+    .page23-list-item { font-size: 1.2rem; }
+}
+
+@media (max-width: 1745px) { .page23-title-text { font-size: 4.2rem; } }
+@media (max-width: 1536px) { .page23-title-text { font-size: 4.0rem; } }
+@media (max-width: 1280px) { .page23-title-text { font-size: 3.8rem; } }
+@media (max-width: 1100px) { .page23-title-text { font-size: 3.5rem; } }
+@media (max-width: 640px) {
+    .page23-title-text { font-size: 2.5rem; }
+    .page23-list-item { font-size: 1.5rem; }
 }
             `}</style>
 
             <div className="page23-container">
-                {/* Image and Title Wrapper */}
                 <div className="page23-image-title-wrapper">
-                    {/* Background Image - Windmills */}
                     <div className="page23-image" aria-hidden="true">
                         <img
                             src={page23Image}
@@ -244,18 +178,13 @@ const Page23 = () => {
                         />
                     </div>
 
-                    {/* REGION 1: Title */}
-                    <header 
-                        className="page23-title"
-                        role="region"
-                        aria-label={getTitleText()}
-                    >
+                    <header className="page23-title">
                         <div className="page23-title-box">
-                            <h1 aria-hidden="true" style={{ margin: 0 }}>
+                            <h1 style={{ margin: 0 }}>
                                 <span className="page23-title-text" style={{ fontWeight: 'normal' }}>
                                     {getText('page23_section', lang)}
                                 </span>
-                                <span className="page23-title-text" style={{ fontWeight: 'bold', lineHeight: '1.1' }}>
+                                <span className="page23-title-text" style={{ fontWeight: 'bold', lineHeight: '1.1', whiteSpace: 'nowrap' }}>
                                     {getText('page23_title', lang)}
                                 </span>
                             </h1>
@@ -263,13 +192,8 @@ const Page23 = () => {
                     </header>
                 </div>
 
-                {/* REGION 2: Section Contents */}
-                <nav 
-                    className="page23-list"
-                    role="region"
-                    aria-label={getListItemsText()}
-                >
-                    <ul aria-hidden="true" style={{
+                <nav className="page23-list" aria-label={lang === 'en' ? 'Section topics' : 'Sujets de la section'}>
+                    <ul style={{
                         listStyleType: 'none',
                         padding: '0',
                         margin: '0',
